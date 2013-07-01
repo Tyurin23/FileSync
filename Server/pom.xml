@@ -12,8 +12,6 @@
     <artifactId>FileSync-Server</artifactId>
 
 
-
-
     <build>
         <plugins>
             <plugin>

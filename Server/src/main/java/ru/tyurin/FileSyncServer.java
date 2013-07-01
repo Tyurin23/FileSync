@@ -7,7 +7,7 @@ public class FileSyncServer {
 
 	public static final Logger LOG = Logger.getLogger(FileSyncServer.class);
 
-	public FileSyncServer(){
+	public FileSyncServer() {
 		LOG.info("Starting server...");
 		LOG.info("Stopping server...");
 	}
