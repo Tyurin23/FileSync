@@ -1,6 +1,7 @@
 package ru.tyurin;
 
 import org.apache.log4j.Logger;
+import ru.tyurin.connector.ServerConnector;
 
 
 public class FileSyncServer {
@@ -9,6 +10,7 @@ public class FileSyncServer {
 
 	public FileSyncServer() {
 		LOG.info("Starting server...");
+		ServerConnector connector = new ServerConnector();
 		LOG.info("Stopping server...");
 	}
 
