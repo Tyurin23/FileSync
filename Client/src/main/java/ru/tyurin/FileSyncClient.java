@@ -9,6 +9,7 @@ import ru.tyurin.util.Settings;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 
 public class FileSyncClient {
@@ -28,7 +29,7 @@ public class FileSyncClient {
 		messages.setName("Messages");
 		messages.start();
 		try {
-			manager = new FSManager(new File(settings.getDirectory()));
+			manager = new FSManager(Paths.get(settings.getDirectory()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

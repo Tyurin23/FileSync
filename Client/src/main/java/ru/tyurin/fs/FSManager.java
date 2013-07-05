@@ -5,6 +5,8 @@ import ru.tyurin.util.MessageSystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,18 +20,20 @@ public class FSManager implements Runnable {
 	public static Logger LOG = Logger.getLogger(FSManager.class);
 
 	private FSContainer container;
-	private File path;
+	private Path path;
+	private FSVisitor visitor;
 
-	public FSManager(File path) throws IOException {
-		if (!(path.isDirectory() && path.canWrite())) {
+	public FSManager(Path path) throws IOException {
+		if (!(Files.isDirectory(path) && Files.isWritable(path))) {
 			throw new IOException("path is not a directory of not writable");
 		}
 		this.path = path;
 		container = new FSContainer();
+		visitor = new FSVisitor(container);
 	}
 
 
-	private boolean refreshFS() {
+	private boolean refreshFS() throws IOException {
 		LOG.info("Refresh");
 		refreshDirectory(path);
 		return false;
@@ -39,38 +43,24 @@ public class FSManager implements Runnable {
 
 	}
 
-	private void refreshDirectory(File file) {
-		if (file.canWrite() && file.isDirectory()) {
-			for (File f : file.listFiles()) {
-				if (f.isFile()) {
-					FileNode node = new FileNode(f);
-					boolean isAdded = container.addNode(node);
-					if (isAdded) {
-						LOG.info(String.format("%s file added. size - %d", f.getName(), f.length()));
-
-					}
-				} else if (f.isDirectory()) {
-					refreshDirectory(f);
-				} else {
-					LOG.info("Not dir or file");
-				}
-			}
-		} else {
-			LOG.info("not write");
-		}
-		LOG.info("count " + container.size());
-
+	private void refreshDirectory(Path path) throws IOException {
+		Files.walkFileTree(path, visitor);
 	}
 
 	@Override
 	public void run() {
 		LOG.info("Starting FSManager...");
 		while (!Thread.currentThread().isInterrupted()) {
-			if (MessageSystem.getInstance().isRefreshFileSystem()) {
-				boolean isChanged = refreshFS();
-				if (isChanged) {
-					syncFS();
+			try{
+				if (MessageSystem.getInstance().isRefreshFileSystem()) {
+					boolean isChanged = refreshFS();
+					if (isChanged) {
+						syncFS();
+					}
 				}
+			}catch (Exception e){
+				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 		}
 		LOG.info("FSManager stopped");

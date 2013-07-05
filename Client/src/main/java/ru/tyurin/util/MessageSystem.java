@@ -1,6 +1,10 @@
 package ru.tyurin.util;
 
 import org.apache.log4j.Logger;
+import ru.tyurin.fs.FileNode;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,8 +21,11 @@ public class MessageSystem implements Runnable {
 
 	private boolean refreshFileSystem = false;
 
+	private Queue<FileNode> queue;
+
 	private MessageSystem() {
 		super();
+		queue = new ArrayDeque<>();
 	}
 
 	public void refreshFileSystem() {

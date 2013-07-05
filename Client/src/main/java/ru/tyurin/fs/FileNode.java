@@ -1,9 +1,10 @@
 package ru.tyurin.fs;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -14,20 +15,16 @@ import java.util.zip.CheckedInputStream;
  * Time: 11:32 AM
  * To change this template use File | Settings | File Templates.
  */
-public class FileNode {
+public class FileNode implements Serializable {
 
 	private String path;
 	private long space;
 	private long hash;
 
-	public FileNode(File file) {
-		path = file.getPath();
-		space = file.length();
-		try {
-			hash = getHash(file);
-		} catch (IOException e) {
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-		}
+	public FileNode(Path path) throws IOException {
+		this.path = path.toString();
+		space = Files.size(path);
+		hash = getHash(path);
 	}
 
 	public String getPath() {
@@ -55,8 +52,8 @@ public class FileNode {
 		return false;
 	}
 
-	private long getHash(File file) throws IOException {
-		InputStream istream = new FileInputStream(file);
+	private long getHash(Path path) throws IOException {
+		InputStream istream = Files.newInputStream(path);
 		CheckedInputStream ch = new CheckedInputStream(istream, new CRC32());
 		ch.read();
 		return ch.getChecksum().getValue();
