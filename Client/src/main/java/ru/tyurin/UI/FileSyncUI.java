@@ -21,7 +21,7 @@ public class FileSyncUI extends JFrame {
 	private static final int WINDOW_WIDHT = 300;
 	private static final int WINDOW_HEIGHT = 200;
 
-	private static final String TRAY_ICON_PATH = "/img/tray.ico";
+	private static final String TRAY_ICON_PATH = "/img/tray.png";
 
 
 	public FileSyncUI() {
