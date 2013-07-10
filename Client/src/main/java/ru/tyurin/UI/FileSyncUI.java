@@ -1,11 +1,15 @@
 package ru.tyurin.UI;
 
+import ru.tyurin.util.Settings;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -48,30 +52,44 @@ public class FileSyncUI extends JFrame {
 			Image img = Toolkit.getDefaultToolkit().getImage(iconUrl);
 
 			final JPopupMenu popup = new JPopupMenu();
-			JMenuItem item = new JMenuItem("Exit");
-			item.addActionListener(new ActionListener() {
+			JMenuItem exitItem = new JMenuItem("Exit");
+			exitItem.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					System.out.println("Exiting...");
-					System.exit(0);
+					System.exit(0);//TODO exit from MessageSystem
 				}
 			});
-			popup.add(item);
+			popup.add(exitItem);
+			JMenuItem openUIItem = new JMenuItem("Show Status");
+			openUIItem.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					setVisible(true);
+				}
+			});
+
 
 			final TrayIcon icon = new TrayIcon(img, "FileSync");
 			icon.setImageAutoSize(true);
 			icon.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					setVisible(true);
+					try {
+						Desktop.getDesktop().open(new File(Settings.getDirectory()));
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 				}
 			});
 			icon.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseReleased(MouseEvent e) {
-					popup.setLocation(e.getX(), e.getY());
-					popup.setInvoker(popup);
-					popup.setVisible(true);
+					if (e.getButton() == MouseEvent.BUTTON3) {
+						popup.setLocation(e.getX(), e.getY());
+						popup.setInvoker(popup);
+						popup.setVisible(true);
+					}
 				}
 			});
 
