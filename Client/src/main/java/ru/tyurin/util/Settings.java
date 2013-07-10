@@ -3,19 +3,15 @@ package ru.tyurin.util;
 
 public class Settings {
 
-	private String directory;
-	private int timeToRefresh;
+	private static String directory = "/home/tyurin/tmp/sync/";
+	private static int timeToRefresh = 1000;
 
-	public Settings() {
-		directory = "/home/tyurin/tmp/sync/";
-		timeToRefresh = 1000;
-	}
 
-	public String getDirectory() {
+	public static synchronized String getDirectory() {
 		return directory;
 	}
 
-	public int getTimeToRefresh() {
+	public static synchronized int getTimeToRefresh() {
 		return timeToRefresh;
 	}
 }
