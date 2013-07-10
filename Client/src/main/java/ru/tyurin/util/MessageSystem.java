@@ -1,18 +1,15 @@
 package ru.tyurin.util;
 
 import org.apache.log4j.Logger;
-import ru.tyurin.fs.FileNode;
+import ru.tyurin.util.event.Event;
+import ru.tyurin.util.event.EventType;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Created with IntelliJ IDEA.
- * User: tyurin
- * Date: 7/3/13
- * Time: 12:16 PM
- * To change this template use File | Settings | File Templates.
- */
+//TODO clear old events
 public class MessageSystem implements Runnable {
 
 	public static Logger LOG = Logger.getLogger(MessageSystem.class);
@@ -21,12 +18,30 @@ public class MessageSystem implements Runnable {
 
 	private boolean refreshFileSystem = false;
 
-	private Queue<FileNode> queue;
+	private Map<EventType, List<Event>> events = new HashMap<>();
 
 	private MessageSystem() {
 		super();
-		queue = new ArrayDeque<>();
 	}
+
+	public synchronized void addEvent(Event ev) {
+		if (events.containsKey(ev.getType())) {
+			events.get(ev.getType()).add(ev);
+		} else {
+			List<Event> eventsList = new ArrayList<>();
+			eventsList.add(ev);
+			events.put(ev.getType(), eventsList);
+		}
+	}
+
+	public List<Event> getEvent(EventType type) {
+		if (events.containsKey(type)) {
+			return new ArrayList<>(events.get(type));
+		} else {
+			return new ArrayList<>();
+		}
+	}
+
 
 	public void refreshFileSystem() {
 		refreshFileSystem = true;
