@@ -4,11 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Created with IntelliJ IDEA.
  * User: tyurin
  * Date: 7/10/13
  * Time: 12:32 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FileSyncPane extends JPanel {
 
@@ -45,9 +43,18 @@ public class FileSyncPane extends JPanel {
 			0, 0
 	);
 
+	private final GridBagConstraints HIDE_BUTTON_CONSTRAINTS = new GridBagConstraints(
+			3, 0,
+			1, 1,
+			0, 0,
+			GridBagConstraints.EAST, GridBagConstraints.BOTH,
+			new Insets(0, 0, 0, 0),
+			0, 0
+	);
+
 	private final GridBagConstraints LIST_CONSTRAINTS = new GridBagConstraints(
 			0, 1,
-			3, 1,
+			4, 1,
 			0, LIST_WY,
 			GridBagConstraints.EAST, GridBagConstraints.BOTH,
 			new Insets(0, 0, 0, 0),
@@ -66,6 +73,10 @@ public class FileSyncPane extends JPanel {
 
 		JButton menu = new JButton("Menu");
 		add(menu, MENU_BUTTON_CONSTRAINTS);
+
+		JButton hideButton = new JButton("_");
+		add(hideButton, HIDE_BUTTON_CONSTRAINTS);
+
 
 		JList<String> list = new JList<>(s);
 		list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
