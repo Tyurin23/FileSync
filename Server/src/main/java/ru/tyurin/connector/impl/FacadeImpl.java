@@ -3,6 +3,7 @@ package ru.tyurin.connector.impl;
 import ru.tyurin.filesync.remote.Facade;
 
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,9 +12,9 @@ import java.rmi.RemoteException;
  * Time: 5:02 PM
  * To change this template use File | Settings | File Templates.
  */
-public class FacadeImpl implements Facade {
+public class FacadeImpl extends UnicastRemoteObject implements Facade {
 
-	public FacadeImpl() {
+	public FacadeImpl() throws RemoteException {
 		super();
 	}
 

@@ -2,12 +2,13 @@ package ru.tyurin;
 
 
 import org.apache.log4j.Logger;
+import ru.tyurin.UI.FileSyncUI;
 import ru.tyurin.fs.FSManager;
 import ru.tyurin.util.FSTimer;
 import ru.tyurin.util.MessageSystem;
 import ru.tyurin.util.Settings;
 
-import java.io.File;
+import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Paths;
 
@@ -23,6 +24,13 @@ public class FileSyncClient {
 	private FSTimer timer;
 
 	public FileSyncClient() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				new FileSyncUI();
+			}
+		});
+
 		LOG.info("Starting client...");
 		settings = new Settings();
 		messages = new Thread(MessageSystem.getInstance());

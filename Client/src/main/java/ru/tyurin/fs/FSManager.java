@@ -3,7 +3,6 @@ package ru.tyurin.fs;
 import org.apache.log4j.Logger;
 import ru.tyurin.util.MessageSystem;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +33,7 @@ public class FSManager implements Runnable {
 
 
 	private boolean refreshFS() throws IOException {
-		LOG.info("Refresh");
+//		LOG.info("Refresh");
 		refreshDirectory(path);
 		return false;
 	}
@@ -51,14 +50,14 @@ public class FSManager implements Runnable {
 	public void run() {
 		LOG.info("Starting FSManager...");
 		while (!Thread.currentThread().isInterrupted()) {
-			try{
+			try {
 				if (MessageSystem.getInstance().isRefreshFileSystem()) {
 					boolean isChanged = refreshFS();
 					if (isChanged) {
 						syncFS();
 					}
 				}
-			}catch (Exception e){
+			} catch (Exception e) {
 				e.printStackTrace();
 				Thread.currentThread().interrupt();
 			}

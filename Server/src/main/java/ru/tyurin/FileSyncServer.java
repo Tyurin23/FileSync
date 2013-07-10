@@ -3,9 +3,6 @@ package ru.tyurin;
 import org.apache.log4j.Logger;
 import ru.tyurin.connector.AbstractConnector;
 import ru.tyurin.connector.ServerConnector;
-import ru.tyurin.connector.SocketConnector;
-
-import java.io.IOException;
 
 
 public class FileSyncServer {
@@ -15,14 +12,13 @@ public class FileSyncServer {
 	public FileSyncServer() {
 
 //		ServerConnector connector = new ServerConnector();
+//			AbstractConnector connector = new SocketConnector();
+		AbstractConnector connector = new ServerConnector();
+		Thread conn = new Thread(connector);
+		conn.start();
 		try {
-			AbstractConnector connector = new SocketConnector();
-			Thread conn = new Thread(connector);
-			conn.start();
-			while(conn.getState() != Thread.State.TERMINATED){
-
-			}
-		} catch (IOException e) {
+			conn.join();
+		} catch (InterruptedException e) {
 			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 		}
 
