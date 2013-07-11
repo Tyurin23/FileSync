@@ -29,6 +29,6 @@ public class FSTimer implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		MessageSystem.getInstance().refreshFileSystem();
+
 	}
 }

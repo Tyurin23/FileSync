@@ -6,5 +6,6 @@ package ru.tyurin.util.event;
  * Time: 3:03 PM
  */
 public enum EventType {
-	FILE_CHANGED
+	FILE_CHANGED,
+	REFRESH
 }
