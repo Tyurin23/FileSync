@@ -2,12 +2,10 @@ package ru.tyurin.util;
 
 import org.apache.log4j.Logger;
 import ru.tyurin.util.event.Event;
+import ru.tyurin.util.event.EventListener;
 import ru.tyurin.util.event.EventType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 //TODO clear old events
 public class MessageSystem implements Runnable {
@@ -18,9 +16,10 @@ public class MessageSystem implements Runnable {
 
 	private boolean refreshFileSystem = false;
 
-	private Map<EventType, List<Event>> events = new HashMap<>();
+	private Map<EventType, Queue<Event>> events = new HashMap<>();
+	private Map<EventType, List<EventListener>> listeners = new HashMap<>();
 
-	private MessageSystem() {
+	protected MessageSystem() {
 		super();
 	}
 
@@ -28,32 +27,31 @@ public class MessageSystem implements Runnable {
 		if (events.containsKey(ev.getType())) {
 			events.get(ev.getType()).add(ev);
 		} else {
-			List<Event> eventsList = new ArrayList<>();
-			eventsList.add(ev);
-			events.put(ev.getType(), eventsList);
+			Queue<Event> eventsQueue = new ArrayDeque<>();
+			eventsQueue.offer(ev);
+			events.put(ev.getType(), eventsQueue);
 		}
 	}
 
-	public List<Event> getEvent(EventType type) {
-		if (events.containsKey(type)) {
-			return new ArrayList<>(events.get(type));
+
+	public void sendToListeners(Event ev) {
+		for (EventListener listener : listeners.get(ev.getType())) {
+			listener.listen(ev);
+		}
+	}
+
+	public void addListener(EventListener listener, EventType type) {
+		if (listener == null) {
+			throw new NullPointerException("Listener can't be null");
+		}
+		List<EventListener> listenersList = listeners.get(type);
+		if (listenersList != null) {
+			listenersList.add(listener);
 		} else {
-			return new ArrayList<>();
+			listenersList = new ArrayList<>();
+			listenersList.add(listener);
+			listeners.put(type, listenersList);
 		}
-	}
-
-
-	public void refreshFileSystem() {
-		refreshFileSystem = true;
-	}
-
-	public boolean isRefreshFileSystem() {
-		try {
-			return refreshFileSystem;
-		} finally {
-			refreshFileSystem = false;
-		}
-
 	}
 
 	public static synchronized MessageSystem getInstance() {
@@ -67,6 +65,9 @@ public class MessageSystem implements Runnable {
 	public void run() {
 		LOG.info("Starting message system...");
 		while (!Thread.currentThread().isInterrupted()) {
+			for (Map.Entry<EventType, Queue<Event>> entry : events.entrySet()) {
+				sendToListeners(entry.getValue().peek());
+			}
 		}
 		LOG.info("Message system stopped");
 	}
