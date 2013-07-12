@@ -47,6 +47,8 @@ public class FileSyncClient {
 
 		timer = new FSTimer(settings.getTimeToRefresh());
 		timer.start();
+
+		//git test
 	}
 
 	public static void main(String[] args) {
