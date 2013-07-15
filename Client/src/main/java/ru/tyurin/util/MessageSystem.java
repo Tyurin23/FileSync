@@ -14,7 +14,6 @@ public class MessageSystem implements Runnable {
 
 	private static MessageSystem system;
 
-	private boolean refreshFileSystem = false;
 
 	private Map<EventType, Queue<Event>> events = new HashMap<>();
 	private Map<EventType, List<EventListener>> listeners = new HashMap<>();
@@ -65,10 +64,18 @@ public class MessageSystem implements Runnable {
 	public void run() {
 		LOG.info("Starting message system...");
 		while (!Thread.currentThread().isInterrupted()) {
-			for (Map.Entry<EventType, Queue<Event>> entry : events.entrySet()) {
-				sendToListeners(entry.getValue().peek());
-			}
+			tick();
 		}
 		LOG.info("Message system stopped");
 	}
+
+	protected void tick() {
+		for (Map.Entry<EventType, Queue<Event>> entry : events.entrySet()) {
+			Event ev = entry.getValue().poll();
+			if (ev != null) {
+				sendToListeners(ev);
+			}
+		}
+	}
+
 }
