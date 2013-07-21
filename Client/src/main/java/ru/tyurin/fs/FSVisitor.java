@@ -1,53 +1,45 @@
 package ru.tyurin.fs;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Created with IntelliJ IDEA.
- * User: tyurin
- * Date: 7/4/13
- * Time: 3:11 PM
- * To change this template use File | Settings | File Templates.
- */
 public class FSVisitor extends SimpleFileVisitor<Path> {
 
 	private FSContainer container;
+	private Path base;
 
-	public FSVisitor(FSContainer container) {
+	private List<Path> changedNode = new ArrayList<>();
+
+	public FSVisitor(Path base, FSContainer container) {
+		this.base = base;
 		this.container = container;
 	}
 
-	public FSContainer getContainer() {
-		return container;
-	}
-
-	public void setContainer(FSContainer container) {
-		this.container = container;
+	public List<Path> getChanged(){
+		try {
+			Files.walkFileTree(base, this);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+		List<Path> ret = changedNode;
+		changedNode = new ArrayList<>();
+		return ret;
 	}
 
 	@Override
 	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-		FileNode node = new FileNode(file);
-		boolean isAdded = container.addNode(node);
-		if (isAdded) {
-			System.out.println(String.format("%s file added.", file.getFileName()));
+		FileNode node = container.getContainer().get(file);
+		if(node == null || !FSUtils.compare(file, node)){
+			changedNode.add(file);
 		}
 		return FileVisitResult.CONTINUE;
 	}
-
-	/*@Override
-	public FileVisitResult visitFile(Object file, BasicFileAttributes attrs) throws IOException {
-		System.out.println(file.toString());
-		FileNode node = new FileNode(file);
-		boolean isAdded = container.addNode(node);
-		if (isAdded) {
-			LOG.info(String.format("%s file added. size - %d", f.getName(), f.length()));
-
-		}
-		return FileVisitResult.CONTINUE;
-	}*/
 
 }

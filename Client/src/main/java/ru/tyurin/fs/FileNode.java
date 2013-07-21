@@ -1,12 +1,7 @@
 package ru.tyurin.fs;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,10 +16,15 @@ public class FileNode implements Serializable {
 	private long space;
 	private long hash;
 
-	public FileNode(Path path) throws IOException {
+	public FileNode(Path path) {
+		this(path, -1, -1);
+	}
+
+	public FileNode(Path path, long space, long hash){
 		this.path = path.toString();
-		space = Files.size(path);
-		hash = getHash(path);
+		this.space = space;
+		this.hash = hash;
+
 	}
 
 	public String getPath() {
@@ -39,23 +39,5 @@ public class FileNode implements Serializable {
 		return hash;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj.getClass().equals(this.getClass())) {
-			FileNode node = (FileNode) obj;
-			boolean equals = true;
-			equals = equals && path.equals(node.getPath());
-			equals = equals && space == node.getSpace();
-			equals = equals && hash == node.getHash();
-			return equals;
-		}
-		return false;
-	}
 
-	private long getHash(Path path) throws IOException {
-		InputStream istream = Files.newInputStream(path);
-		CheckedInputStream ch = new CheckedInputStream(istream, new CRC32());
-		ch.read();
-		return ch.getChecksum().getValue();
-	}
 }

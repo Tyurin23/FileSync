@@ -9,6 +9,8 @@ import ru.tyurin.util.event.EventType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,12 +27,14 @@ public class FSManager implements Runnable, EventListener {
 	private Path path;
 	private FSVisitor visitor;
 	private MessageSystem messages;
+	private FSWatcher watcher;
 
 	private boolean refresh;
+	private final boolean disableHidden = true;
+	private boolean init = false;
 
 	public FSManager(Path path) throws IOException {
 		this(path, MessageSystem.getInstance());
-		this.path = path;
 	}
 
 	public FSManager(Path path, MessageSystem messages) throws IOException {
@@ -38,11 +42,13 @@ public class FSManager implements Runnable, EventListener {
 			throw new IOException("path is not a directory of not writable");
 		}
 		container = new FSContainer();
-		visitor = new FSVisitor(container);
 		this.messages = messages;
 		this.messages.addListener(this, EventType.REFRESH);
 		this.path = path;
+		visitor = new FSVisitor(this.path, this.container);
+		watcher = new FSWatcher(this.path);
 	}
+
 
 	private boolean verifyPath(Path path) {
 		if (!(Files.isDirectory(path) && Files.isWritable(path))) {
@@ -53,18 +59,24 @@ public class FSManager implements Runnable, EventListener {
 
 	}
 
-	private boolean refreshFS() throws IOException {
-//		LOG.info("Refresh");
-		refreshDirectory(path);
-		return false;
+
+	private List<FileNode> getChanged(List<Path> changed) throws IOException {
+		List<FileNode> nodesList = new ArrayList<>();
+		for(Path watchedFile : changed){
+			if(disableHidden && Files.isHidden(watchedFile)) {
+				continue;
+			}
+			FileNode node = new FileNode(watchedFile);
+			nodesList.add(node);
+		}
+ 		return nodesList;
 	}
 
-	private void syncFS() {
 
-	}
 
-	private void refreshDirectory(Path path) throws IOException {
-		Files.walkFileTree(path, visitor);
+
+	private void sendChanges(List<FileNode> changed){
+
 	}
 
 	@Override
@@ -75,23 +87,23 @@ public class FSManager implements Runnable, EventListener {
 				runTick();
 			} catch (Exception e) {
 				e.printStackTrace();
-				Thread.currentThread().interrupt();
 			}
 		}
 		LOG.info("FSManager stopped");
 	}
 
 	public void runTick() throws IOException {
+		if(!init){
+			sendChanges(getChanged(visitor.getChanged()));
+			init = true;
+		}
 		if (refresh) {
-			boolean isChanged = refreshFS();
-			if (isChanged) {
-				syncFS();
-			}
+			sendChanges(getChanged(watcher.getWatched()));
 		}
 	}
 
 	@Override
-	public void listen(Event e) {
+	public synchronized void listen(Event e) {
 		refresh = true;
 	}
 }

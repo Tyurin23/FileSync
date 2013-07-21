@@ -5,11 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/**
- * User: tyurin
- * Date: 7/10/13
- * Time: 4:19 PM
- */
 @Entity
 @Table(name = "file")
 public class File {
@@ -22,6 +17,13 @@ public class File {
 
 	@Column(name = "hash")
 	private Long hash;
+
+	public File(String path, Long size, Long hash) {
+		this.path = path;
+		this.size = size;
+		this.hash = hash;
+	}
+
 
 	public String getPath() {
 		return path;
