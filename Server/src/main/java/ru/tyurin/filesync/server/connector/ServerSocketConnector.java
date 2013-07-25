@@ -6,7 +6,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ServerSocketConnector {
+public class ServerSocketConnector implements AutoCloseable {
 
 	public static Logger LOG = Logger.getLogger(ServerSocketConnector.class);
 
@@ -30,7 +30,7 @@ public class ServerSocketConnector {
 		BufferedReader bufferReader = new BufferedReader(reader);
 
 		String message = null;
-		while((message = bufferReader.readLine()) != null){
+		while ((message = bufferReader.readLine()) != null) {
 			LOG.info("Read line");
 			System.out.println(message);
 			System.out.flush();
@@ -46,6 +46,7 @@ public class ServerSocketConnector {
 		return obj;
 	}
 
+	@Override
 	public void close() throws IOException {
 		socket.close();
 		serverSocket.close();
