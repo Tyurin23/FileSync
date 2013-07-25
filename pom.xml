@@ -38,6 +38,7 @@
 
 
     <modules>
+        <module>Shared</module>
         <module>Server</module>
         <module>Client</module>
 
