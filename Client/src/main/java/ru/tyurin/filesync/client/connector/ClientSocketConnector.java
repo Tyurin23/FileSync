@@ -12,6 +12,7 @@ public class ClientSocketConnector {
 
 //	SSLSocket socket;
 	Socket socket;
+
 	public ClientSocketConnector(String host, int port) throws IOException {
 //		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 //		socket = (SSLSocket) factory.createSocket(host, port);
@@ -34,6 +35,15 @@ public class ClientSocketConnector {
 //			bufferedwriter.flush();
 //		}
 
+		socket.close();
+	}
+
+	public void sendObject(Object part) throws IOException {
+		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+		out.writeObject(part);
+	}
+
+	public void close() throws IOException {
 		socket.close();
 	}
 

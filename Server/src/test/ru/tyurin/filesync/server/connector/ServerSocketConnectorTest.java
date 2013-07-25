@@ -1,6 +1,7 @@
 package ru.tyurin.filesync.server.connector;
 
 import org.junit.Test;
+import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.IOException;
 
@@ -21,7 +22,12 @@ public class ServerSocketConnectorTest {
 	}
 
 	@Test
-	public void testConnector() throws IOException {
-		connector.read();
+	public void testConnector() throws IOException, ClassNotFoundException {
+		connector.getConnection();
+		FileTransferPart part = (FileTransferPart) connector.getObject();
+		System.out.println(part.getName());
+		part = (FileTransferPart) connector.getObject();
+		System.out.println(part.getName());
+		connector.close();
 	}
 }

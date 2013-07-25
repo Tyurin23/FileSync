@@ -3,6 +3,7 @@ package ru.tyurin.filesync.client.connector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.IOException;
 
@@ -32,8 +33,11 @@ public class ClientSocketConnectorTest {
 
 	@Test
 	public void testConnector() throws IOException {
-		connector.read();
-		System.out.println("ok");
+		FileTransferPart part = new FileTransferPart("Hello");
+		connector.sendObject(part);
+		FileTransferPart p2 = new FileTransferPart("World!");
+		connector.sendObject(p2);
+		connector.close();
 	}
 
 
