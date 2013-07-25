@@ -18,12 +18,12 @@
                 <version>1.2.1</version>
                 <executions>
                     <execution>
-                        <phase>test</phase>
+                        <!--<phase>test</phase>-->
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>ru.tyurin.FileSyncClient</mainClass>
+                            <mainClass>ru.tyurin.filesync.client.FileSyncClient</mainClass>
                             <arguments>
                                 <argument>-Djava.security.policy=server.policy</argument>
                             </arguments>
@@ -64,13 +64,6 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>1.3.160</version>
-        </dependency>
-
-
-        <dependency>
-            <groupId>ru.tyurin</groupId>
-            <artifactId>FileSync-Remote</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
