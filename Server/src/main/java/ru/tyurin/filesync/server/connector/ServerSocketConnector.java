@@ -6,7 +6,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ServerSocketConnector implements AutoCloseable {
+public class ServerSocketConnector implements Connector {
 
 	public static Logger LOG = Logger.getLogger(ServerSocketConnector.class);
 
@@ -40,10 +40,29 @@ public class ServerSocketConnector implements AutoCloseable {
 		LOG.info("Connection close.");
 	}
 
-	public Object getObject() throws IOException, ClassNotFoundException {
+	@Override
+	public void waitConnection() throws IOException {
+		LOG.debug("Waiting connection...");
+		socket = serverSocket.accept();
+		LOG.debug("Connected!");
+	}
+
+	@Override
+	public Object getObject() throws IOException {
 		ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-		Object obj = input.readObject();
+		Object obj = null;
+		try {
+			obj = input.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		}
 		return obj;
+	}
+
+	@Override
+	public void sendObject(Object obj) {
+
 	}
 
 	@Override
@@ -52,9 +71,4 @@ public class ServerSocketConnector implements AutoCloseable {
 		serverSocket.close();
 	}
 
-	public void getConnection() throws IOException {
-		LOG.info("Waiting connection...");
-		socket = serverSocket.accept();
-		LOG.info("Connected!");
-	}
 }

@@ -23,7 +23,7 @@ public class ServerSocketConnectorTest {
 
 	@Test
 	public void testConnector() throws IOException, ClassNotFoundException {
-		connector.getConnection();
+//		connector.getConnection();
 		FileTransferPart part = (FileTransferPart) connector.getObject();
 		System.out.println(part.getName());
 		part = (FileTransferPart) connector.getObject();
