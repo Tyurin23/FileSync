@@ -9,7 +9,6 @@ public class Receaver implements Runnable {
 	private MessageSystem messages;
 
 	public Receaver() {
-		connector = new ClientConnector();
 		messages = MessageSystem.getInstance();
 	}
 
@@ -20,7 +19,7 @@ public class Receaver implements Runnable {
 
 	@Override
 	public void run() {
-		while (!Thread.currentThread().isInterrupted()){
+		while (!Thread.currentThread().isInterrupted()) {
 
 		}
 	}

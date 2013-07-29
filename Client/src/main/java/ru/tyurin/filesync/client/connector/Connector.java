@@ -1,8 +1,6 @@
 package ru.tyurin.filesync.client.connector;
 
-import ru.tyurin.filesync.client.fs.FileNode;
-
-import java.util.List;
+import java.io.IOException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,6 +11,12 @@ import java.util.List;
  */
 public interface Connector {
 
-	public List<FileNode> getStatus(FileNode node);
+	public void close() throws IOException;
+
+	public void sendObject(Object part) throws IOException;
+
+	public Object getObject() throws IOException;
+
+	public boolean isClosed();
 
 }

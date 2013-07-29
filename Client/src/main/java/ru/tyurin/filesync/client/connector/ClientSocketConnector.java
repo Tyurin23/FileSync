@@ -2,49 +2,70 @@ package ru.tyurin.filesync.client.connector;
 
 import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 
-public class ClientSocketConnector {
+public class ClientSocketConnector implements Connector {
 
 	public static Logger LOG = Logger.getLogger(ClientSocketConnector.class);
 
-//	SSLSocket socket;
-	Socket socket;
+	protected Socket socket;
+	ObjectInputStream input;
+	ObjectOutputStream output;
+
 
 	public ClientSocketConnector(String host, int port) throws IOException {
-//		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-//		socket = (SSLSocket) factory.createSocket(host, port);
 		socket = new Socket(host, port);
+		output = new ObjectOutputStream(socket.getOutputStream());
+		output.flush();
+		input = new ObjectInputStream(socket.getInputStream());
+		LOG.debug(String.format("Socket created with host: %s:%d", host, port));
 	}
 
-	public void read() throws IOException {
-		InputStream inputstream = System.in;
-		InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-		BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
-
-		OutputStream outputstream = socket.getOutputStream();
-		OutputStreamWriter outputstreamwriter = new OutputStreamWriter(outputstream);
-		BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
-		bufferedwriter.write("Hello");
-		bufferedwriter.flush();
-//		String string = null;
-//		while ((string = bufferedreader.readLine()) != null) {
-//			bufferedwriter.write(string + '\n');
-//			bufferedwriter.flush();
-//		}
-
-		socket.close();
+	protected ClientSocketConnector() {
 	}
 
-	public void sendObject(Object part) throws IOException {
-		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-		out.writeObject(part);
-	}
 
+	@Override
 	public void close() throws IOException {
+		input.close();
+		output.close();
 		socket.close();
+		LOG.debug("Socket closed");
+	}
+
+
+	@Override
+	public void sendObject(Object obj) throws IOException {
+		if (obj != null) {
+			ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+			output.writeObject(obj);
+			output.flush();
+			LOG.debug(String.format("Object %s sent", obj));
+			output.close();
+		}
+
+	}
+
+	@Override
+	public Object getObject() throws IOException {
+		Object obj = null;
+		try {
+			obj = input.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		}
+		LOG.debug(String.format("Object %s read"));
+		return obj;
+	}
+
+	@Override
+	public boolean isClosed() {
+		return socket.isClosed();
 	}
 
 }

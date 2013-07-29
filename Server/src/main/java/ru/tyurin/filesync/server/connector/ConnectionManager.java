@@ -12,6 +12,7 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -28,6 +29,8 @@ public class ConnectionManager extends Thread implements ActionListener {
 	protected ObjectPool<Session> connectionPool;
 	protected Queue<FileTransferPart> dataQueue;
 	protected List<Session> sessionList;
+
+	protected ServerSocket serverSocket;
 
 	private Timer timer = new Timer(1000, this);
 	protected ConnectorFactory connectorFactory;
@@ -87,9 +90,7 @@ public class ConnectionManager extends Thread implements ActionListener {
 	}
 
 	protected Connector waitConnection() throws IOException {
-		Connector connector = connectorFactory.createConnector(CONNECTION_PORT);
-		connector.waitConnection();
-		return connector;
+		return connectorFactory.createConnector(serverSocket.accept());
 	}
 
 	protected void returnClosedSession() throws Exception {

@@ -12,4 +12,6 @@ public interface Connector {
 	public void sendObject(Object obj);
 
 	public void close() throws IOException;
+
+	public boolean isClose();
 }
