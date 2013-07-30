@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -33,7 +35,7 @@ public class FileTransferPartTest {
 
 	@AfterMethod
 	public void tearDown() throws Exception {
-
+		Files.delete(Paths.get(fileName));
 	}
 
 	@Test
