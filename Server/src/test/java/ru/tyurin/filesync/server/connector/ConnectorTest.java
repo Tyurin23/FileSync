@@ -50,8 +50,12 @@ public class ConnectorTest {
 							server.sendObject(writeObj);
 							LOG.debug("Send object " + writeObj);
 						}
-						Thread.sleep(100);
-						Object obj = server.getObject();
+						Object obj = null;
+						try {
+							obj = server.getObject();
+						} catch (IOException e) {
+							server.close();
+						}
 
 						if (obj != null) {
 							input.add(obj);
@@ -60,8 +64,6 @@ public class ConnectorTest {
 
 					}
 				} catch (IOException e) {
-					e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-				} catch (InterruptedException e) {
 					e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 				}
 				LOG.debug("Server stopped");
@@ -96,14 +98,35 @@ public class ConnectorTest {
 			dataProvider = "getData"
 	)
 	public void testConnection(FileTransferPart part) throws Exception {
-		LOG.debug("Send " + part.getName());
 		client = new ClientSocketConnector(host, port);
 		client.sendObject(part);
-		Thread.sleep(300);
+		Thread.sleep(1);
 		FileTransferPart rcv = (FileTransferPart) srv.input.poll();
-		Assert.assertNotNull(rcv);
-		Assert.assertEquals(part.getName(), rcv.getName());
-		client.close();
+		try {
+			Assert.assertNotNull(rcv);
+			Assert.assertEquals(part.getName(), rcv.getName());
+		} finally {
+			client.close();
+		}
+
+	}
+
+	@Test(
+			dataProvider = "getDataArray"
+	)
+	public void testManySend(FileTransferPart[] parts) throws Exception {
+		client = new ClientSocketConnector(host, port);
+		try {
+			for (int i = 0; i < parts.length; i++) {
+				client.sendObject(parts[i]);
+				Thread.sleep(1);
+				FileTransferPart rcv = (FileTransferPart) srv.input.poll();
+				Assert.assertNotNull(rcv);
+				Assert.assertEquals(parts[i].getName(), rcv.getName());
+			}
+		} finally {
+			client.close();
+		}
 	}
 
 	@DataProvider
@@ -112,6 +135,19 @@ public class ConnectorTest {
 				new Object[]{new FileTransferPart("TEST")},
 				new Object[]{new FileTransferPart("VASYA")},
 				new Object[]{new FileTransferPart("PETYA")}
+		};
+	}
+
+	@DataProvider
+	public Object[][] getDataArray() {
+		return new Object[][]{
+				new Object[]{
+						new FileTransferPart[]{
+								new FileTransferPart("TEST"),
+								new FileTransferPart("PETYA"),
+								new FileTransferPart("Vasya")
+						}
+				}
 		};
 	}
 

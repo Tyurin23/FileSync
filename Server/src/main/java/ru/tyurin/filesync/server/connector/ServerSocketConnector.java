@@ -30,10 +30,7 @@ public class ServerSocketConnector implements Connector {
 	public Object getObject() throws IOException {
 		Object obj = null;
 		try {
-			LOG.debug(String.format("Available: %d, Read: %d", input.available(), input.read()));
 			obj = input.readObject();
-			LOG.debug("Object readed");
-
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
