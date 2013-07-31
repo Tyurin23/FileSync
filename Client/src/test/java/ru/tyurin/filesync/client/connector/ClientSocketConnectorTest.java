@@ -1,6 +1,8 @@
 package ru.tyurin.filesync.client.connector;
 
 
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -18,13 +20,7 @@ import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
-/**
- * Created with IntelliJ IDEA.
- * User: tyurin
- * Date: 25.07.13
- * Time: 18:52
- * To change this template use File | Settings | File Templates.
- */
+
 public class ClientSocketConnectorTest extends ClientSocketConnector {
 
 	final String host = "localhost";
@@ -36,13 +32,14 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 
 	Thread server;
 
-
+	@PrepareForTest(ObjectInputStream.class)
 	@BeforeClass
 	public void setUp() throws Exception {
-		input = mock(ObjectInputStream.class);
+//		input = mock(ObjectInputStream.class);
+		input = PowerMockito.mock(ObjectInputStream.class);
 		output = mock(ObjectOutputStream.class);
-		when(input.readObject()).thenReturn(new FileTransferPart());
-
+//		when(input.readObject()).thenReturn(new FileTransferPart());
+		PowerMockito.when(input, "readObject").thenReturn(new FileTransferPart());
 		server = new Thread() {
 
 			ServerSocket socket = new ServerSocket(port);

@@ -56,26 +56,31 @@ public class FSManager implements Runnable, EventListener {
 		} else {
 			return true;
 		}
-
 	}
 
 
 	private List<FileNode> getChanged(List<Path> changed) throws IOException {
 		List<FileNode> nodesList = new ArrayList<>();
-		for(Path watchedFile : changed){
-			if(disableHidden && Files.isHidden(watchedFile)) {
+		for (Path watchedFile : changed) {
+			if (disableHidden && Files.isHidden(watchedFile)) {
 				continue;
 			}
-			FileNode node = new FileNode(watchedFile);
-			nodesList.add(node);
+//			FileNode node = new FileNode(watchedFile, FSUtils.getSpace(watchedFile), FSUtils.);
+//			nodesList.add(node);
 		}
- 		return nodesList;
+		return nodesList;
+	}
+
+	protected FileNode getChange(Path path) {
+		FileNode node = container.getContainer().get(path);
+		if (node == null) {
+			return new FileNode(path, FSUtils.getSpace(path), FSUtils.getHash(path), null);
+		}
+		return null;
 	}
 
 
-
-
-	private void sendChanges(List<FileNode> changed){
+	private void sendChanges(List<FileNode> changed) {
 
 	}
 
@@ -85,6 +90,7 @@ public class FSManager implements Runnable, EventListener {
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
 				runTick();
+				Thread.sleep(2000);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -93,13 +99,7 @@ public class FSManager implements Runnable, EventListener {
 	}
 
 	public void runTick() throws IOException {
-		if(!init){
-			sendChanges(getChanged(visitor.getChanged()));
-			init = true;
-		}
-		if (refresh) {
-			sendChanges(getChanged(watcher.getWatched()));
-		}
+		visitor.refresh();
 	}
 
 	@Override

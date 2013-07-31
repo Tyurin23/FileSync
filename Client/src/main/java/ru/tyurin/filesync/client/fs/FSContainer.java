@@ -1,15 +1,10 @@
 package ru.tyurin.filesync.client.fs;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created with IntelliJ IDEA.
- * User: tyurin
- * Date: 7/3/13
- * Time: 11:36 AM
- * To change this template use File | Settings | File Templates.
- */
+
 public class FSContainer {
 
 	private Map<String, FileNode> container;
@@ -36,6 +31,14 @@ public class FSContainer {
 
 	public int size() {
 		return container.size();
+	}
+
+	public FileNode get(String path) {
+		return container.get(path);
+	}
+
+	public Collection<FileNode> getCollection() {
+		return container.values();
 	}
 
 	public Map<String, FileNode> getContainer() {

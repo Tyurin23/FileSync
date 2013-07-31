@@ -7,7 +7,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -33,7 +32,8 @@ public class StorageJPA implements Storage {
 	@Override
 	public FileNode getFileNode(Path path) {
 		File fileEntity = em.find(File.class, path.toString());
-		return new FileNode(Paths.get(fileEntity.getPath()), fileEntity.getSize(), fileEntity.getHash());
+//		return new FileNode(Paths.get(fileEntity.getPath()), fileEntity.getSize(), fileEntity.getHash());
+		return null;
 	}
 
 	@Override
@@ -54,7 +54,7 @@ public class StorageJPA implements Storage {
 		return null;
 	}
 
-	private void save(Object o){
+	private void save(Object o) {
 		em.merge(o);
 	}
 

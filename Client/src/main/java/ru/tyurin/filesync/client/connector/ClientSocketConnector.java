@@ -41,13 +41,10 @@ public class ClientSocketConnector implements Connector {
 	@Override
 	public void sendObject(Object obj) throws IOException {
 		if (obj != null) {
-			ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			output.writeObject(obj);
 			output.flush();
 			LOG.debug(String.format("Object %s sent", obj));
-			output.close();
 		}
-
 	}
 
 	@Override
