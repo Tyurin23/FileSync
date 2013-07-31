@@ -21,6 +21,10 @@ public class FileNode implements Serializable {
 		this.blocks = blocks;
 	}
 
+	public String getPath() {
+		return path;
+	}
+
 	public long getSpace() {
 		return space;
 	}
