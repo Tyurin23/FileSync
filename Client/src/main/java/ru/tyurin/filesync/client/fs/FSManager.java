@@ -1,57 +1,40 @@
 package ru.tyurin.filesync.client.fs;
 
 import org.apache.log4j.Logger;
-import ru.tyurin.filesync.client.util.MessageSystem;
-import ru.tyurin.filesync.client.util.event.Event;
-import ru.tyurin.filesync.client.util.event.EventListener;
-import ru.tyurin.filesync.client.util.event.EventType;
+import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
-/**
- * Created with IntelliJ IDEA.
- * User: tyurin
- * Date: 7/3/13
- * Time: 11:36 AM
- * To change this template use File | Settings | File Templates.
- */
-public class FSManager implements Runnable, EventListener {
+public class FSManager extends Thread {
 
 	public static Logger LOG = Logger.getLogger(FSManager.class);
 
 	private FSContainer container;
-	private Path path;
+	private Queue<FileTransferPart> input;
+	private Path base;
 	private FSVisitor visitor;
-	private MessageSystem messages;
-	private FSWatcher watcher;
 
-	private boolean refresh;
 	private final boolean disableHidden = true;
-	private boolean init = false;
+	private final int TIMER = 1000;
 
-	public FSManager(Path path) throws IOException {
-		this(path, MessageSystem.getInstance());
-	}
-
-	public FSManager(Path path, MessageSystem messages) throws IOException {
+	public FSManager(Path path, FSContainer container, Queue<FileTransferPart> input) throws IOException {
 		if (!verifyPath(path)) {
 			throw new IOException("path is not a directory of not writable");
 		}
-		container = new FSContainer();
-		this.messages = messages;
-		this.messages.addListener(this, EventType.REFRESH);
-		this.path = path;
-		visitor = new FSVisitor(this.path, this.container);
-		watcher = new FSWatcher(this.path);
+		this.base = path;
+		this.container = container;
+		visitor = new FSVisitor(this.base, this.container);
+		this.input = input;
 	}
 
-
 	private boolean verifyPath(Path path) {
-		if (!(Files.isDirectory(path) && Files.isWritable(path))) {
+		if (path == null && !(Files.isDirectory(path) && Files.isWritable(path))) {
 			return false;
 		} else {
 			return true;
@@ -59,30 +42,67 @@ public class FSManager implements Runnable, EventListener {
 	}
 
 
-	private List<FileNode> getChanged(List<Path> changed) throws IOException {
-		List<FileNode> nodesList = new ArrayList<>();
+	private List<FileNode> getChangedNodes(List<Path> changed) throws IOException {
+		List<FileNode> nodesList = new ArrayList<>(changed.size());
 		for (Path watchedFile : changed) {
-			if (disableHidden && Files.isHidden(watchedFile)) {
-				continue;
+			FileNode node = container.get(watchedFile);
+			if (node == null) {
+				node = new FileNode(
+						watchedFile,
+						FSUtils.getSize(watchedFile),
+						FSUtils.getHash(watchedFile),
+						FSUtils.getBlocks(watchedFile)
+				);
+				if (isIncompatibleFile(watchedFile)) {
+					node.setStatus(FileStatus.BAD);
+				}
+			} else {
+				if (Files.exists(Paths.get(node.getPath()))) {
+					node.setStatus(FileStatus.MODIFIED);
+					refreshBlocks(node);
+				} else {
+					node.setStatus(FileStatus.DELETED);
+				}
 			}
-//			FileNode node = new FileNode(watchedFile, FSUtils.getSpace(watchedFile), FSUtils.);
-//			nodesList.add(node);
+			nodesList.add(node);
 		}
 		return nodesList;
 	}
 
 	protected FileNode getChange(Path path) {
-		FileNode node = container.getContainer().get(path);
-		if (node == null) {
-			return new FileNode(path, FSUtils.getSpace(path), FSUtils.getHash(path), null);
-		}
+
 		return null;
 	}
 
+	protected void refreshBlocks(FileNode node) throws IOException {
+		List<FileBlock> newBlocks = FSUtils.getBlocks(Paths.get(node.getPath()));
+		if (newBlocks.size() < node.getBlocks().size()) {
+			for (int i = node.getBlocks().size() - newBlocks.size() - 1; i < node.getBlocks().size(); i++) {
+				FileBlock block = node.getBlocks().get(i);
+				block.setDeleted(true);
+				block.setSync(false);
+			}
+		}
+		for (FileBlock block : newBlocks) {
+			if (!FSUtils.blockEquals(block, node.getBlocks().get(block.getIndex()))) {
+				node.getBlocks().set(block.getIndex(), block);
+			}
+		}
+	}
 
-	private void sendChanges(List<FileNode> changed) {
+
+	protected void saveInput() {
 
 	}
+
+	protected void checkChanges() throws IOException {
+		List<Path> changedFiles = visitor.getChanges();
+		List<FileNode> changedNodes = getChangedNodes(changedFiles);
+		for (FileNode node : changedNodes) {
+			container.set(Paths.get(node.getPath()), node);
+		}
+	}
+
 
 	@Override
 	public void run() {
@@ -90,7 +110,9 @@ public class FSManager implements Runnable, EventListener {
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
 				runTick();
-				Thread.sleep(2000);
+				Thread.sleep(TIMER);
+			} catch (InterruptedException e) {
+				LOG.info("sleep interrupted");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -98,12 +120,16 @@ public class FSManager implements Runnable, EventListener {
 		LOG.info("FSManager stopped");
 	}
 
-	public void runTick() throws IOException {
-		visitor.refresh();
+	protected void runTick() throws IOException {
+		saveInput();
+		checkChanges();
 	}
 
-	@Override
-	public synchronized void listen(Event e) {
-		refresh = true;
+	protected boolean isIncompatibleFile(Path file) throws IOException {
+		if (Files.isHidden(file)) {
+			return true;
+		}
+		return false;
 	}
+
 }

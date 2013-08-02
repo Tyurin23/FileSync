@@ -1,22 +1,21 @@
 package ru.tyurin.filesync.client.fs;
 
+import org.apache.commons.io.FileUtils;
 import org.testng.annotations.*;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
+import java.util.Random;
 
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 /*
 TODO
-file created
 file modified
 file deleted
-folder created
 folder deleted
 not readable
 hidden files
@@ -25,9 +24,6 @@ links
  */
 
 public class FSVisitorTest {
-
-	Queue<Path> createdFiles = new ArrayDeque<>();
-
 	final String root = "test";
 
 	FSVisitor visitor;
@@ -70,26 +66,58 @@ public class FSVisitorTest {
 		assertNotNull(result);
 	}
 
-	@Test(testName = "createFile")
-	public void testCreateFile() throws Exception {
+	@Test
+	public void testCreateFiles() throws Exception {
 		final String file = "test";
 		visitor = new FSVisitor(rootPath, container);
 		testGetChanges(visitor, 0);
 
-		Path createdFile = createFile(rootPath.resolve(file).toString());
+		Path createdFile = createFile(rootPath.resolve(file));
 		testGetChanges(visitor, 1, createdFile);
 
-		when(container.get(rootPath.toAbsolutePath().resolve(file).toString())).thenReturn(FSUtils.createFileNode(rootPath.toAbsolutePath().resolve(file)));
-		createdFile = createFile(rootPath.resolve(file + "1").toString());
+		mockContainer(createdFile);
+		createdFile = createFile(rootPath.resolve(file + "1"));
+		testGetChanges(visitor, 1, createdFile);
+
+		mockContainer(createdFile);
+		Path createdDir = createDirectory(rootPath.resolve("dir"));
+		testGetChanges(visitor, 1, createdDir);
+
+		mockContainer(createdDir);
+		createdFile = createFile(rootPath.resolve(createdDir).resolve("file"));
 		testGetChanges(visitor, 1, createdFile);
 	}
 
+	@Test
+	public void testModifyFiles() throws Exception {
+		final String file = "file";
+		final String dir = "dir";
+		final String subfile = "sub";
+		Path filePath = createFile(rootPath.resolve(Paths.get(file)));
+		Path dirPath = createDirectory(rootPath.resolve(Paths.get(dir)));
+		Path subfilePath = createFile(rootPath.resolve(dirPath).resolve(subfile));
+
+		visitor = new FSVisitor(rootPath, container);
+		testGetChanges(visitor, 3, filePath, dirPath, subfilePath);
+
+		mockContainer(filePath, dirPath, subfilePath);
+		modifyFile(filePath);
+		testGetChanges(visitor, 1, filePath);
+		mockContainer(filePath);
+
+//		modifyFile(subfilePath);
+//		testGetChanges(visitor, 1, filePath);
+	}
 
 	protected void testGetChanges(FSVisitor visitor, int expectedSize, Path... paths) throws Exception {
 		List<Path> result = visitor.getChanges();
 		assertNotNull(result);
 		assertEquals(expectedSize, result.size());
-		assertEquals(paths, result.toArray());
+
+		Arrays.sort(paths);
+		Object[] resArray = result.toArray();
+		Arrays.sort(resArray);
+		assertEquals(paths, resArray);
 	}
 
 	@Test
@@ -115,17 +143,49 @@ public class FSVisitorTest {
 		};
 	}
 
-	protected Path createFile(String path) throws IOException {
-		Path p = Paths.get(path);
+	protected void mockContainer(Path file) throws IOException {
+		FileNode node = FSUtils.createFileNode(file);
+		when(container.get(file)).thenReturn(node);
+	}
+
+	protected void mockContainer(Path... files) throws IOException {
+		for (Path path : files) {
+			mockContainer(path);
+		}
+	}
+
+	protected Path createFile(Path path) throws IOException {
+		Path p = path.toAbsolutePath();
 		Files.createFile(p);
-		createdFiles.offer(p);
+		return p;
+	}
+
+	protected Path createFileWithTrash(Path path) throws IOException {
+		Random rand = new Random();
+		path = createFile(path);
+		int size = rand.nextInt(1000);
+		byte[] bytes = new byte[size];
+		rand.nextBytes(bytes);
+		FileUtils.writeByteArrayToFile(path.toFile(), bytes);
+		return path;
+	}
+
+	protected void modifyFile(Path path) throws IOException {
+		Random rand = new Random();
+		int size = rand.nextInt(1000);
+		byte[] bytes = new byte[size];
+		rand.nextBytes(bytes);
+		FileUtils.writeByteArrayToFile(path.toFile(), bytes);
+	}
+
+
+	protected Path createDirectory(Path path) throws IOException {
+		Path p = path.toAbsolutePath();
+		Files.createDirectory(p);
 		return p;
 	}
 
 	protected void deleteFiles() throws IOException {
-		Path cf;
-		while ((cf = createdFiles.poll()) != null) {
-			Files.delete(cf);
-		}
+		FileUtils.cleanDirectory(rootPath.toFile());
 	}
 }

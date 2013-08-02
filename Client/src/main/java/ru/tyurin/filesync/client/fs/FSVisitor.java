@@ -27,11 +27,6 @@ public class FSVisitor extends SimpleFileVisitor<Path> {
 		this.container = container;
 	}
 
-	public void refresh() throws IOException {
-		Files.walkFileTree(root, this);
-		findDeletedNode();
-	}
-
 	public List<Path> getChanges() throws IOException {
 		Files.walkFileTree(root, this);
 		findDeletedNode();
@@ -43,16 +38,28 @@ public class FSVisitor extends SimpleFileVisitor<Path> {
 
 	@Override
 	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-		FileNode node = container.get(file.toAbsolutePath().toString());
-		if (node == null || !FSUtils.compare(file.toAbsolutePath(), node)) {
-			changedNode.add(file);
+		isChanged(file);
+		return FileVisitResult.CONTINUE;
+	}
+
+	@Override
+	public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+		if (!dir.equals(root)) {
+			isChanged(dir);
 		}
 		return FileVisitResult.CONTINUE;
 	}
 
+	protected void isChanged(Path file) throws IOException {
+		FileNode node = container.get(file.toAbsolutePath());
+		if (node == null || !FSUtils.compare(file.toAbsolutePath(), node)) {
+			changedNode.add(file.toAbsolutePath());
+		}
+	}
+
 	protected void findDeletedNode() {
 		for (FileNode node : container.getCollection()) {
-			Path path = Paths.get(node.getPath());
+			Path path = Paths.get(node.getPath()).toAbsolutePath();
 			if (Files.notExists(path, new LinkOption[]{LinkOption.NOFOLLOW_LINKS})) {
 				changedNode.add(path);
 			}

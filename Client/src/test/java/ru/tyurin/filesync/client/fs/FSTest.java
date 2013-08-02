@@ -1,67 +1,83 @@
 package ru.tyurin.filesync.client.fs;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import ru.tyurin.filesync.client.util.MessageSystem;
-import ru.tyurin.filesync.client.util.event.Event;
-import ru.tyurin.filesync.client.util.event.EventType;
+import org.apache.commons.io.FileUtils;
+import org.testng.annotations.*;
+import ru.tyurin.filesync.shared.FileTransferPart;
 
-import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
-import static org.mockito.Mockito.*;
+import static org.testng.Assert.assertNotNull;
 
-/**
- * User: tyurin
- * Date: 7/11/13
- * Time: 11:30 AM
- */
+
 public class FSTest {
 
 	public static final String path = "/home/tyurin/tmp/testSync/";
 	Path basicDir;
-	MessageSystem mMessageSystem;
 
-	Queue<Path> createdFiles = new ArrayDeque<>();
+	Queue<FileTransferPart> input;
+
+	FSContainer container;
+
+	FSManager manager;
 
 
-	@Before
+	@BeforeClass
 	public void setUp() throws Exception {
+		if (Files.exists(Paths.get(path))) {
+			FileUtils.deleteDirectory(Paths.get(path).toFile());
+		}
 		basicDir = Files.createDirectory(Paths.get(path));
-		mMessageSystem = mock(MessageSystem.class);
-//		when(mMessageSystem.isRefreshFileSystem()).thenReturn(true);
+		container = new FSContainer();
+		input = new ArrayBlockingQueue<FileTransferPart>(100);
 	}
 
-	@After
-	public void tearDown() throws Exception {
-		Path cf;
-		while ((cf = createdFiles.poll()) != null) {
-			Files.delete(cf);
-		}
-		Files.delete(basicDir);
+	@BeforeMethod
+	public void setUpMethod() throws Exception {
+		manager = new FSManager(basicDir, container, input);
+		manager.start();
+	}
 
+	@AfterMethod
+	public void tearDownMethod() throws Exception {
+		manager.interrupt();
+	}
+
+	@AfterClass
+	public void tearDown() throws Exception {
+		FileUtils.cleanDirectory(basicDir.toFile());
 	}
 
 	@Test
-	public void FSTest() throws IOException {
-		FSManager manager = new FSManager(basicDir, mMessageSystem);
-		verify(mMessageSystem).addListener(manager, EventType.REFRESH);
-
-		manager.runTick();
-		verify(mMessageSystem, never()).addEvent(any(Event.class));
-		createFile("hello");
-
+	public void FSTest() throws Exception {
+		List<File> files = FileCreator.createTree(basicDir.toFile(), 3, 5);
+		Thread.sleep(3000);
+		for (File file : files) {
+			FileNode node = container.get(file.toPath());
+			assertNotNull(node);
+		}
 	}
 
-	protected void createFile(String path) throws IOException {
-		Path p = Paths.get(FSTest.path, path);
-		Files.createFile(p);
-		createdFiles.offer(p);
+
+	public static void main(String[] args) throws Exception {
+		FSTest test = new FSTest();
+		while (true) {
+			test.setUp();
+			test.setUpMethod();
+//			Scanner sc = new Scanner(System.in);
+			System.out.println("pre test");
+			test.FSTest();
+			System.out.println("test end");
+			test.tearDownMethod();
+			test.tearDown();
+		}
+
+
 	}
 
 
