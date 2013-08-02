@@ -9,8 +9,6 @@ import ru.tyurin.filesync.client.util.MessageSystem;
 import ru.tyurin.filesync.client.util.Settings;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.nio.file.Paths;
 
 
 public class FileSyncClient {
@@ -36,11 +34,11 @@ public class FileSyncClient {
 		messages = new Thread(MessageSystem.getInstance());
 		messages.setName("Messages");
 		messages.start();
-		try {
-			manager = new FSManager(Paths.get(settings.getDirectory()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			manager = new FSManager(Paths.get(settings.getDirectory()),);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 		fsManager = new Thread(manager);
 		fsManager.setName("FS");
 		fsManager.start();

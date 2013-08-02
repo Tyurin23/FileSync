@@ -1,8 +1,6 @@
 package ru.tyurin.filesync.client.connector;
 
 
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -32,14 +30,11 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 
 	Thread server;
 
-	@PrepareForTest(ObjectInputStream.class)
 	@BeforeClass
 	public void setUp() throws Exception {
 //		input = mock(ObjectInputStream.class);
-		input = PowerMockito.mock(ObjectInputStream.class);
 		output = mock(ObjectOutputStream.class);
 //		when(input.readObject()).thenReturn(new FileTransferPart());
-		PowerMockito.when(input, "readObject").thenReturn(new FileTransferPart());
 		server = new Thread() {
 
 			ServerSocket socket = new ServerSocket(port);
