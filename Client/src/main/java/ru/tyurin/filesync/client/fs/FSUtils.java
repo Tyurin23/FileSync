@@ -2,6 +2,8 @@ package ru.tyurin.filesync.client.fs;
 
 import org.apache.commons.io.FileUtils;
 import ru.tyurin.filesync.client.util.Settings;
+import ru.tyurin.filesync.shared.FileBlock;
+import ru.tyurin.filesync.shared.FileNode;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

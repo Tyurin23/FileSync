@@ -20,6 +20,7 @@ public class ServerSocketConnector implements Connector {
 		output = new ObjectOutputStream(socket.getOutputStream());
 		output.flush();
 		input = new ObjectInputStream(socket.getInputStream());
+		LOG.debug("Connection created");
 	}
 
 	@Override
@@ -31,6 +32,7 @@ public class ServerSocketConnector implements Connector {
 		Object obj = null;
 		try {
 			obj = input.readObject();
+			LOG.debug("Object receaved " + obj);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -38,8 +40,12 @@ public class ServerSocketConnector implements Connector {
 	}
 
 	@Override
-	public void sendObject(Object obj) {
-
+	public void sendObject(Object obj) throws IOException {
+		if (obj != null) {
+			output.writeObject(obj);
+			output.flush();
+			LOG.debug("Send object " + obj);
+		}
 	}
 
 	@Override
@@ -47,6 +53,7 @@ public class ServerSocketConnector implements Connector {
 		input.close();
 		output.close();
 		socket.close();
+		LOG.debug("Connection close");
 	}
 
 	@Override

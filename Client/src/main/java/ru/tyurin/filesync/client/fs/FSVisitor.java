@@ -1,5 +1,7 @@
 package ru.tyurin.filesync.client.fs;
 
+import ru.tyurin.filesync.shared.FileNode;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;

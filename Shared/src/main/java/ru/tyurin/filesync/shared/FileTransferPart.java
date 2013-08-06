@@ -4,34 +4,50 @@ import java.io.Serializable;
 
 public class FileTransferPart implements Serializable {
 
-	private String name;
 
-	public FileTransferPart() {
+	private String path;
+	private byte[] data;
+
+	public FileTransferPart(String path, byte[] data) {
+		this.path = path;
+		this.data = data;
 	}
 
-	public FileTransferPart(String name) {
-		this.name = name;
+	public FileTransferPart(String path) {
+		this.path = path;
 	}
 
-	public String getName() {
-		return name;
+	public String getPath() {
+		return path;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public byte[] getData() {
+		return data;
+	}
+
+	public void setData(byte[] data) {
+		this.data = data;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		boolean equals = true;
-		equals = equals && obj.getClass() == this.getClass();
+		if (obj == this) return true;
+		if (!(obj instanceof FileTransferPart)) {
+			return false;
+		}
 		FileTransferPart part = (FileTransferPart) obj;
-		equals = equals && part.name == this.name;
+		boolean equals = true;
+		equals &= part.equals(part.path);
+		equals &= data.equals(part.data);
 		return equals;
 	}
 
 	@Override
 	public String toString() {
-		return name;
+		return String.format("%s[$d]", path, data.length);
 	}
 }

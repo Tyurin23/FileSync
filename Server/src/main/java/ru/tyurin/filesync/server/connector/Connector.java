@@ -9,7 +9,7 @@ public interface Connector {
 
 	public Object getObject() throws IOException;
 
-	public void sendObject(Object obj);
+	public void sendObject(Object obj) throws IOException;
 
 	public void close() throws IOException;
 

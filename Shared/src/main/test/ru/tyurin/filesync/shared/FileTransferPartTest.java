@@ -47,7 +47,7 @@ public class FileTransferPartTest {
 
 		FileTransferPart postSerialize = (FileTransferPart) in.readObject();
 		assertNotNull(postSerialize);
-		assertEquals(preSerialize.getName(), postSerialize.getName());
+		assertEquals(preSerialize.getPath(), postSerialize.getPath());
 		assertEquals(preSerialize.toString(), postSerialize.toString());
 
 	}

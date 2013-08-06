@@ -1,6 +1,9 @@
 package ru.tyurin.filesync.client.fs;
 
 import org.apache.log4j.Logger;
+import ru.tyurin.filesync.shared.FileBlock;
+import ru.tyurin.filesync.shared.FileNode;
+import ru.tyurin.filesync.shared.FileStatus;
 import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.IOException;
@@ -23,11 +26,12 @@ public class FSManager extends Thread {
 	private final boolean disableHidden = true;
 	private final int TIMER = 1000;
 
-	public FSManager(Path path, FSContainer container, Queue<FileTransferPart> input) throws IOException {
-		if (!verifyPath(path)) {
+	public FSManager(String path, FSContainer container, Queue<FileTransferPart> input) throws IOException {
+		Path p = Paths.get(path);
+		if (!verifyPath(p)) {
 			throw new IOException("path is not a directory of not writable");
 		}
-		this.base = path;
+		this.base = p;
 		this.container = container;
 		visitor = new FSVisitor(this.base, this.container);
 		this.input = input;
@@ -107,12 +111,13 @@ public class FSManager extends Thread {
 	@Override
 	public void run() {
 		LOG.info("Starting FSManager...");
-		while (!Thread.currentThread().isInterrupted()) {
+		while (!this.isInterrupted()) {
 			try {
 				runTick();
 				Thread.sleep(TIMER);
 			} catch (InterruptedException e) {
 				LOG.info("sleep interrupted");
+				this.interrupt();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

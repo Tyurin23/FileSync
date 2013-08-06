@@ -1,7 +1,7 @@
 package ru.tyurin.filesync.client.storage;
 
-import ru.tyurin.filesync.client.fs.FileNode;
 import ru.tyurin.filesync.client.storage.tables.File;
+import ru.tyurin.filesync.shared.FileNode;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;

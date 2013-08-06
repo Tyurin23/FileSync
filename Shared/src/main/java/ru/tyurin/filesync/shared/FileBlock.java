@@ -1,6 +1,8 @@
-package ru.tyurin.filesync.client.fs;
+package ru.tyurin.filesync.shared;
 
-public class FileBlock {
+import java.io.Serializable;
+
+public class FileBlock implements Serializable {
 
 	private int index;
 	private long hash;
@@ -45,5 +47,23 @@ public class FileBlock {
 
 	public void setSync(boolean sync) {
 		this.sync = sync;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%d %d (sync: %b, del: %b", this.getIndex(), this.getHash(), this.isSync(), this.isDeleted());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this) return true;
+		if (!(obj instanceof FileBlock)) return false;
+		FileBlock b = (FileBlock) obj;
+		return (
+				b.getIndex() == this.getIndex() &&
+						b.getHash() == this.getHash() &&
+						b.isSync() == this.isSync() &&
+						b.isDeleted() == this.isDeleted()
+		);
 	}
 }

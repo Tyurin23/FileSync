@@ -1,32 +1,54 @@
 package ru.tyurin.filesync.server;
 
 import org.apache.log4j.Logger;
-import ru.tyurin.filesync.server.connector.AbstractConnector;
-import ru.tyurin.filesync.server.connector.ServerConnector;
+import ru.tyurin.filesync.server.connector.ConnectionManager;
+import ru.tyurin.filesync.server.storage.BlockNode;
+import ru.tyurin.filesync.server.storage.StorageManager;
 
 
-public class FileSyncServer {
+public class FileSyncServer extends Thread {
 
 	public static final Logger LOG = Logger.getLogger(FileSyncServer.class);
 
-	public FileSyncServer() {
+	private ConnectionManager connectionManager;
+	private StorageManager storageManager;
 
-//		ServerConnector connector = new ServerConnector();
-//			AbstractConnector connector = new ServerSocketConnector();
-		AbstractConnector connector = new ServerConnector();
-		Thread conn = new Thread(connector);
-		conn.start();
-		try {
-			conn.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+	public FileSyncServer(Config cfg) throws Exception {
+		if (cfg.isEnableSSL()) {
+			LOG.info("SSL enabled");
+			System.setProperty("javax.net.ssl.keyStore", cfg.getKeyStore());
+			System.setProperty("javax.net.ssl.keyStorePassword", cfg.getKeyStorePassword());
+			connectionManager = ConnectionManager.getSSLInstance();
+		} else {
+			connectionManager = ConnectionManager.getDefaultInstance();
 		}
+		storageManager = new StorageManager(cfg.rootDirectory);
 
+	}
+
+	@Override
+	public void run() {
+		storageManager.start();
+		connectionManager.start();
+		while (!interrupted()) {
+			while (connectionManager.getDataQueue().size() > 0) {
+				BlockNode node = connectionManager.getDataQueue().poll();
+				LOG.debug("Node received: " + node.getPath());
+			}
+		}
+		connectionManager.interrupt();
+		storageManager.interrupt();
 	}
 
 	public static void main(String[] args) {
 		LOG.info("Starting server...");
-		FileSyncServer server = new FileSyncServer();
-		LOG.info("Stopping server...");
+		try {
+			FileSyncServer server = new FileSyncServer(new Config());
+			server.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error("Error! Message: " + e.getMessage());
+		}
+		LOG.info("Server stopped");
 	}
 }

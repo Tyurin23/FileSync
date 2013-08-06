@@ -3,7 +3,7 @@ package ru.tyurin.filesync.server.connector.facory;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.log4j.Logger;
 import ru.tyurin.filesync.server.connector.Session;
-import ru.tyurin.filesync.shared.FileTransferPart;
+import ru.tyurin.filesync.server.storage.BlockNode;
 
 import java.util.Queue;
 
@@ -12,16 +12,10 @@ public class SessionPoolFactory extends BasePoolableObjectFactory<Session> {
 	public static Logger LOG = Logger.getLogger(SessionPoolFactory.class);
 
 	private SessionFactory factory;
-	Queue<FileTransferPart> dataQueue;
-	int count = 0;
+	private Queue<BlockNode> dataQueue;
+	private int count = 0;
 
-
-	public SessionPoolFactory(Queue<FileTransferPart> dataQueue) {
-		this.dataQueue = dataQueue;
-		factory = new SessionFactory();
-	}
-
-	public SessionPoolFactory(Queue<FileTransferPart> dataQueue, SessionFactory factory) {
+	public SessionPoolFactory(Queue<BlockNode> dataQueue, SessionFactory factory) {
 		this.factory = factory;
 		this.dataQueue = dataQueue;
 	}

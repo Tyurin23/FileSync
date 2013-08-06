@@ -17,8 +17,10 @@ public class FileCreator {
 	private File base;
 	protected int maxDepth = 3;
 	protected int maxFiles = 20;
+	protected int minFiles = 0;
 	protected int maxFileSize = 10000000;
 	protected int maxNameSize = 30;
+	protected double dirProbability = 0.3;
 
 	private Random rand = new Random();
 	private List<File> createdFiles = new ArrayList<>();
@@ -36,6 +38,19 @@ public class FileCreator {
 		return creator.createdFiles;
 	}
 
+	public static File createSingleFile(File base) throws IOException {
+		FileCreator creator = new FileCreator(base);
+		creator.maxDepth = 0;
+		creator.maxFiles = 1;
+		creator.minFiles = 1;
+		creator.dirProbability = 0.0;
+		creator.createTree();
+		if (creator.createdFiles.size() < 1 || creator.createdFiles.size() > 1) {
+			throw new Error("Fuck((");
+		}
+		return creator.createdFiles.get(0);
+	}
+
 	public FileCreator(File base) {
 		this.base = base;
 	}
@@ -46,21 +61,21 @@ public class FileCreator {
 
 
 	protected void create(File root, int depth) throws IOException {
-		int filesCount = rand.nextInt(maxFiles + 1);
+		int filesCount = minFiles + rand.nextInt(maxFiles - minFiles + 1);
 		while ((filesCount--) > 0) {
-			if (depth < maxDepth) {
-				if (isCreateDir()) {
-					File childDir = createDir(root);
+			if (isCreateDir()) {
+				File childDir = createDir(root);
+				if (depth < maxDepth) {
 					create(childDir, depth + 1);
-					continue;
 				}
+				continue;
 			}
 			createFile(root);
 		}
 	}
 
 	private void createFile(File root) throws IOException {
-		int nameLen = rand.nextInt(maxNameSize);
+		int nameLen = 1 + rand.nextInt(maxNameSize);
 		int trashSize = rand.nextInt(maxFileSize);
 		File childFile = new File(root, generateString(nameLen));
 		childFile.createNewFile();
@@ -69,7 +84,7 @@ public class FileCreator {
 	}
 
 	private File createDir(File root) {
-		int nameLen = rand.nextInt(maxNameSize);
+		int nameLen = 1 + rand.nextInt(maxNameSize);
 		File childDir = new File(root, generateString(nameLen));
 		childDir.mkdir();
 		createdFiles.add(childDir);
@@ -104,7 +119,7 @@ public class FileCreator {
 
 
 	protected boolean isCreateDir() {
-		return rand.nextBoolean();
+		return (rand.nextDouble() <= dirProbability ? true : false);
 	}
 
 	protected String generateString(int length) {

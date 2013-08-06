@@ -1,7 +1,7 @@
 package ru.tyurin.filesync.client.storage;
 
 
-import ru.tyurin.filesync.client.fs.FileNode;
+import ru.tyurin.filesync.shared.FileNode;
 
 import java.nio.file.Path;
 import java.util.List;

@@ -2,6 +2,7 @@ package ru.tyurin.filesync.client.fs;
 
 import org.apache.commons.io.FileUtils;
 import org.testng.annotations.*;
+import ru.tyurin.filesync.shared.FileNode;
 
 import java.io.IOException;
 import java.nio.file.*;

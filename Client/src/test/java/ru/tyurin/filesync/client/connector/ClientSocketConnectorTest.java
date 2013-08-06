@@ -7,6 +7,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import ru.tyurin.filesync.shared.FileTransferPart;
 
+import javax.net.SocketFactory;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -28,10 +29,13 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 	ObjectInputStream input;
 	ObjectOutputStream output;
 
+	SocketFactory factory;
+
 	Thread server;
 
 	@BeforeClass
 	public void setUp() throws Exception {
+		factory = SocketFactory.getDefault();
 //		input = mock(ObjectInputStream.class);
 		output = mock(ObjectOutputStream.class);
 //		when(input.readObject()).thenReturn(new FileTransferPart());
@@ -98,7 +102,7 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 			enabled = false
 	)
 	public void testClose() throws IOException {
-		connector = new ClientSocketConnector(host, port);
+		connector = new ClientSocketConnector(factory.createSocket(host, port));
 		connector.close();
 		if (!connector.isClosed()) {
 			fail();
@@ -110,7 +114,7 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 			enabled = false
 	)
 	public void testConstructor() throws IOException {
-		connector = new ClientSocketConnector(host, port);
+		connector = new ClientSocketConnector(factory.createSocket(host, port));
 		if (connector.isClosed()) {
 			fail();
 		}
@@ -122,11 +126,11 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 			enabled = false
 	)
 	public void testBadConstructor(String host, int port) throws IOException {
-		connector = new ClientSocketConnector(host, port);
+		connector = new ClientSocketConnector(factory.createSocket(host, port));
 	}
 
 	public ClientSocketConnector getMockedConnector() throws IOException {
-		connector = new ClientSocketConnector(host, port);
+		connector = new ClientSocketConnector(factory.createSocket(host, port));
 		connector.output = output;
 		connector.input = input;
 		return connector;

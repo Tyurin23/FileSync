@@ -1,4 +1,4 @@
-package ru.tyurin.filesync.client.fs;
+package ru.tyurin.filesync.shared;
 
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -55,5 +55,24 @@ public class FileNode implements Serializable {
 
 	public void setStatus(FileStatus status) {
 		this.status = status;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof FileNode)) return false;
+		FileNode n = (FileNode) obj;
+		return (
+				n.getPath().equals(this.getPath()) &&
+						n.getHash() == this.getHash() &&
+						n.getSpace() == this.getSpace() &&
+						n.getStatus() == this.getStatus() &&
+						(getBlocks() != null ? n.getBlocks().equals(this.getBlocks()) : (n.getBlocks() == this.getBlocks()))
+		);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%s: (%d, %d, %d)[%s]", getPath(), getSpace(), getHash(), (getBlocks() != null ? getBlocks().size() : 0), getStatus());
 	}
 }
