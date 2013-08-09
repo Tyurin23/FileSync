@@ -5,6 +5,8 @@ import ru.tyurin.filesync.server.connector.ConnectionManager;
 import ru.tyurin.filesync.server.storage.BlockNode;
 import ru.tyurin.filesync.server.storage.StorageManager;
 
+import java.io.IOException;
+
 
 public class FileSyncServer extends Thread {
 
@@ -14,6 +16,7 @@ public class FileSyncServer extends Thread {
 	private StorageManager storageManager;
 
 	public FileSyncServer(Config cfg) throws Exception {
+		super("FileSyncServer");
 		if (cfg.isEnableSSL()) {
 			LOG.info("SSL enabled");
 			System.setProperty("javax.net.ssl.keyStore", cfg.getKeyStore());
@@ -22,7 +25,7 @@ public class FileSyncServer extends Thread {
 		} else {
 			connectionManager = ConnectionManager.getDefaultInstance();
 		}
-		storageManager = new StorageManager(cfg.rootDirectory);
+		storageManager = new StorageManager(cfg.storageDirectory);
 
 	}
 
@@ -31,9 +34,19 @@ public class FileSyncServer extends Thread {
 		storageManager.start();
 		connectionManager.start();
 		while (!interrupted()) {
+			if (storageManager.isInterrupted() || connectionManager.isInterrupted()) {
+				interrupt();
+				continue;
+			}
 			while (connectionManager.getDataQueue().size() > 0) {
 				BlockNode node = connectionManager.getDataQueue().poll();
 				LOG.debug("Node received: " + node.getPath());
+				try {
+					storageManager.saveBlock(node);
+				} catch (IOException e) {
+					e.printStackTrace();
+					interrupt();
+				}
 			}
 		}
 		connectionManager.interrupt();
@@ -48,6 +61,7 @@ public class FileSyncServer extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOG.error("Error! Message: " + e.getMessage());
+
 		}
 		LOG.info("Server stopped");
 	}

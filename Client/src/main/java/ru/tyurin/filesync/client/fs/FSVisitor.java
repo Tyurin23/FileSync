@@ -53,15 +53,15 @@ public class FSVisitor extends SimpleFileVisitor<Path> {
 	}
 
 	protected void isChanged(Path file) throws IOException {
-		FileNode node = container.get(file.toAbsolutePath());
+		FileNode node = container.get(file);
 		if (node == null || !FSUtils.compare(file.toAbsolutePath(), node)) {
-			changedNode.add(file.toAbsolutePath());
+			changedNode.add(file);
 		}
 	}
 
 	protected void findDeletedNode() {
 		for (FileNode node : container.getCollection()) {
-			Path path = Paths.get(node.getPath()).toAbsolutePath();
+			Path path = Paths.get(node.getAbsolutePath());
 			if (Files.notExists(path, new LinkOption[]{LinkOption.NOFOLLOW_LINKS})) {
 				changedNode.add(path);
 			}

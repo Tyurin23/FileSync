@@ -9,17 +9,21 @@ import java.util.Date;
  */
 public class BlockNode {
 
+	public static final int BLOCK_SIZE = 1000000;
+
 	private String id;
 	private int userId;
 	private String path;
+	private int index;
 	private byte[] data;
 	private long hash;
 	private long size;
 	private Date dateModified;
 
-	public BlockNode(String path, int userId) {
+	public BlockNode(String path, int index, int userId) {
 		setPath(path);
 		setUserId(userId);
+		setIndex(index);
 	}
 
 	public String getId() {
@@ -44,6 +48,14 @@ public class BlockNode {
 
 	public void setPath(String path) {
 		this.path = path;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
+	public void setIndex(int index) {
+		this.index = index;
 	}
 
 	public byte[] getData() {

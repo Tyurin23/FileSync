@@ -7,11 +7,9 @@ import ru.tyurin.filesync.shared.FileNode;
 import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -43,17 +41,10 @@ public class FSTest {
 
 	@BeforeMethod
 	public void setUpMethod() throws Exception {
-		storage = new FSStorage(Settings.getStoragePath());
-		container = new FSContainer();
-		List<FileNode> nodes;
-		try {
-			nodes = storage.load();
-		} catch (IOException e) {
-			nodes = new ArrayList<>();
-		}
-		container.add(nodes);
+		storage = new FSStorage(Settings.getDefaultSettings().getProgramPath());
+		container = storage.getContainer();
 		input = new ArrayBlockingQueue<FileTransferPart>(100);
-		manager = new FSManager(basicDir, container, input);
+		manager = new FSManager(basicDir.toString(), container, input);
 		manager.start();
 	}
 

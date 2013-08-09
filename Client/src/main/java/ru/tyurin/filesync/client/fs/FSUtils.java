@@ -1,10 +1,10 @@
 package ru.tyurin.filesync.client.fs;
 
 import org.apache.commons.io.FileUtils;
-import ru.tyurin.filesync.client.util.Settings;
 import ru.tyurin.filesync.shared.FileBlock;
 import ru.tyurin.filesync.shared.FileNode;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -22,7 +22,7 @@ public class FSUtils {
 			return false;
 		}
 		boolean equals = true;
-		equals = equals && base.toAbsolutePath().toString().equals(node.getPath());
+		equals = equals && base.toAbsolutePath().toString().equals(node.getAbsolutePath());
 		equals = equals && getSize(base) == node.getSpace();
 		equals = equals && getHash(base) == node.getHash();
 		return equals;
@@ -68,10 +68,10 @@ public class FSUtils {
 		RandomAccessFile access = new RandomAccessFile(file.toFile(), "r");
 		try {
 			long fileSize = getSize(file);
-			int count = (int) (fileSize / Settings.getBlockSize() + (fileSize % Settings.getBlockSize() != 0 ? 1 : 0));
+			int count = (int) (fileSize / FileBlock.BLOCK_SIZE + (fileSize % FileBlock.BLOCK_SIZE != 0 ? 1 : 0));
 			List<FileBlock> blocks = new ArrayList<>(count);
 			for (int index = 0; index < count; index++) {
-				int size = Settings.getBlockSize();
+				int size = FileBlock.BLOCK_SIZE;
 				if (index == count - 1) {
 					size = (int) (fileSize - index * size);
 				}
@@ -89,18 +89,32 @@ public class FSUtils {
 		}
 	}
 
+	public static byte[] getBlockData(FileNode node, FileBlock block) throws IOException {
+		RandomAccessFile access = new RandomAccessFile(new File(node.getAbsolutePath()), "r");
+		try {
+			return getBlockData(block.getIndex(), block.getSize(), access);
+		} finally {
+			access.close();
+		}
+	}
+
 
 	protected static FileBlock getBlock(int index, int size, RandomAccessFile input) throws IOException {
+		byte[] bytes = getBlockData(index, size, input);
+		FileBlock block = new FileBlock(index, getHash(bytes), size);
+		return block;
+	}
+
+	protected static byte[] getBlockData(int index, int size, RandomAccessFile input) throws IOException {
 		byte[] bytes = new byte[size];
 		input.seek(index * size);
 		input.read(bytes);
-		FileBlock block = new FileBlock(index, getHash(bytes));
-		return block;
+		return bytes;
 	}
 
 	protected static int getBlocksCount(Path file) throws IOException {
 		long size = getSize(file);
-		long count = size / Settings.getBlockSize() + (size % Settings.getBlockSize() != 0 ? 1 : 0);
+		long count = size / FileBlock.BLOCK_SIZE + (size % FileBlock.BLOCK_SIZE != 0 ? 1 : 0);
 		return (int) count;
 	}
 }

@@ -8,6 +8,7 @@ import java.util.List;
 public class FileNode implements Serializable {
 
 	private String path;
+	private String absolutePath;
 	private long space;
 	private long hash;
 	private FileStatus status = FileStatus.NEW;
@@ -15,14 +16,23 @@ public class FileNode implements Serializable {
 
 
 	public FileNode(Path path, long space, long hash, List<FileBlock> blocks) {
-		this.path = path.toString();
+		this.path = path.toFile().toString();
 		this.space = space;
 		this.hash = hash;
 		this.blocks = blocks;
 	}
 
+	public FileNode(Path path, Path absolutePath, long space, long hash, List<FileBlock> blocks) {
+		this(path, space, hash, blocks);
+		this.absolutePath = absolutePath.toString();
+	}
+
 	public String getPath() {
 		return path;
+	}
+
+	public String getAbsolutePath() {
+		return absolutePath;
 	}
 
 	public long getSpace() {

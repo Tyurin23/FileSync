@@ -1,9 +1,7 @@
 package ru.tyurin.filesync.client.connector;
 
-import ru.tyurin.filesync.shared.ConnectionStatus;
-import ru.tyurin.filesync.shared.FileNode;
-import ru.tyurin.filesync.shared.Request;
-import ru.tyurin.filesync.shared.UserTransfer;
+import org.apache.log4j.Logger;
+import ru.tyurin.filesync.shared.*;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -24,6 +22,9 @@ import java.util.List;
  * Time: 1:47 PM
  */
 public class ConnectionManager extends Thread {
+
+	public static Logger LOG = Logger.getLogger(ConnectionManager.class);
+
 
 	protected String host = "localhost";
 	protected int port = 4444;
@@ -48,9 +49,11 @@ public class ConnectionManager extends Thread {
 
 	public ConnectionManager() {
 		this(SocketFactory.getDefault());
+		LOG.debug("Connection manager created");
 	}
 
 	public ConnectionManager(SocketFactory factory) {
+		super("ClientConnectionManager");
 		this.factory = factory;
 	}
 
@@ -61,9 +64,24 @@ public class ConnectionManager extends Thread {
 		return nodes;
 	}
 
+	public synchronized boolean sendBlock(FileNode node, FileBlock block, byte[] data) throws Exception {
+		FileTransferPart part = new FileTransferPart(node.getPath(), block.getIndex(), data);
+		Connector connector = getConnector();
+		connector.sendObject(Request.SAVE_BLOCK);
+		connector.sendObject(part);
+		ConnectionStatus status = (ConnectionStatus) connector.getObject();
+		if (status == null || status == ConnectionStatus.ERROR) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	protected Connector getConnector() throws Exception {
 		if (connector == null) {
 			connector = new ClientSocketConnector(factory.createSocket(host, port));
+			LOG.debug("Client Connection created");
+			connector.sendObject(Request.AUTH);
 			UserTransfer userTransfer = new UserTransfer(login, pass);
 			connector.sendObject(userTransfer);
 			ConnectionStatus status = (ConnectionStatus) connector.getObject();
@@ -78,12 +96,16 @@ public class ConnectionManager extends Thread {
 
 	@Override
 	public void run() {
+		LOG.debug(String.format("Starting %s", this.getName()));
 		while (!interrupted()) {
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			synchronized (this) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					interrupt();
+				}
 			}
 		}
+		LOG.debug(String.format("%s stopped", this.getName()));
 	}
 }

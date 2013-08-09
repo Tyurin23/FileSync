@@ -1,7 +1,5 @@
 package ru.tyurin.filesync.client.UI;
 
-import ru.tyurin.filesync.client.util.Settings;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -76,7 +74,7 @@ public class FileSyncUI extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					try {
-						Desktop.getDesktop().open(new File(Settings.getDirectory()));
+						Desktop.getDesktop().open(new File(""));//todo
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}

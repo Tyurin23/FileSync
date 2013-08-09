@@ -57,6 +57,7 @@ public class ConnectionManager extends Thread {
 
 
 	protected ConnectionManager(ConnectorFactory connectorFactory, SessionFactory sessionFactory, ServerSocketFactory socketFactory) throws Exception {
+		super("ServerConnectionManager");
 		LOG.debug("Creating connection manager...");
 		this.connectorFactory = connectorFactory;
 		this.sessionFactory = sessionFactory;

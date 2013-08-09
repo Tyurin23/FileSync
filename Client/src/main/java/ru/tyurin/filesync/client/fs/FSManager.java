@@ -27,6 +27,7 @@ public class FSManager extends Thread {
 	private final int TIMER = 1000;
 
 	public FSManager(String path, FSContainer container, Queue<FileTransferPart> input) throws IOException {
+		super("FSManager");
 		Path p = Paths.get(path);
 		if (!verifyPath(p)) {
 			throw new IOException("path is not a directory of not writable");
@@ -52,7 +53,8 @@ public class FSManager extends Thread {
 			FileNode node = container.get(watchedFile);
 			if (node == null) {
 				node = new FileNode(
-						watchedFile,
+						base.relativize(watchedFile),
+						watchedFile.toAbsolutePath(),
 						FSUtils.getSize(watchedFile),
 						FSUtils.getHash(watchedFile),
 						FSUtils.getBlocks(watchedFile)
@@ -103,7 +105,7 @@ public class FSManager extends Thread {
 		List<Path> changedFiles = visitor.getChanges();
 		List<FileNode> changedNodes = getChangedNodes(changedFiles);
 		for (FileNode node : changedNodes) {
-			container.set(Paths.get(node.getPath()), node);
+			container.set(node);
 		}
 	}
 

@@ -7,10 +7,12 @@ public class FileTransferPart implements Serializable {
 
 	private String path;
 	private byte[] data;
+	private int blockIndex;
 
-	public FileTransferPart(String path, byte[] data) {
+	public FileTransferPart(String path, int blockIndex, byte[] data) {
 		this.path = path;
 		this.data = data;
+		this.blockIndex = blockIndex;
 	}
 
 	public FileTransferPart(String path) {
@@ -33,6 +35,14 @@ public class FileTransferPart implements Serializable {
 		this.data = data;
 	}
 
+	public int getBlockIndex() {
+		return blockIndex;
+	}
+
+	public void setBlockIndex(int blockIndex) {
+		this.blockIndex = blockIndex;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) return true;
@@ -48,6 +58,7 @@ public class FileTransferPart implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("%s[$d]", path, data.length);
+		return String.format("%s[%d]", path, data.length);
 	}
+
 }

@@ -5,8 +5,8 @@ import ru.tyurin.filesync.shared.FileNode;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class FSContainer {
@@ -14,7 +14,7 @@ public class FSContainer {
 	private Map<String, FileNode> container;
 
 	public FSContainer() {
-		container = new HashMap<>();
+		container = new ConcurrentHashMap<>();
 	}
 
 	public int size() {
@@ -25,19 +25,16 @@ public class FSContainer {
 		return container.get(path.toAbsolutePath().toString());
 	}
 
-	public synchronized void set(Path path, FileNode node) {
-		container.put(path.toAbsolutePath().toString(), node);
-	}
-
 	public synchronized void set(FileNode node) {
-		container.put(Paths.get(node.getPath()).toAbsolutePath().toString(), node);
+		container.put(Paths.get(node.getAbsolutePath()).toString(), node);
 	}
 
-	public Collection<FileNode> getCollection() {
+	public synchronized Collection<FileNode> getCollection() {
 		return container.values();
 	}
 
-	public void add(Collection<FileNode> nodes) {
+	public void setCollection(Collection<FileNode> nodes) {
+		container.clear();
 		for (FileNode node : nodes) {
 			set(node);
 		}

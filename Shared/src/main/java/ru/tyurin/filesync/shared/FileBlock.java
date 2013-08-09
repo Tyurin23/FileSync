@@ -4,17 +4,21 @@ import java.io.Serializable;
 
 public class FileBlock implements Serializable {
 
+	public static final int BLOCK_SIZE = 1000000;
+
 	private int index;
 	private long hash;
+	private int size;
 	private boolean sync = false;
 	private boolean deleted = false;
 
 	public FileBlock() {
 	}
 
-	public FileBlock(int index, long hash) {
+	public FileBlock(int index, long hash, int size) {
 		this.index = index;
 		this.hash = hash;
+		this.size = size;
 	}
 
 	public int getIndex() {
@@ -29,7 +33,16 @@ public class FileBlock implements Serializable {
 		return hash;
 	}
 
+	public int getSize() {
+		return size;
+	}
+
+	public void setSize(int size) {
+		this.size = size;
+	}
+
 	public void setHash(long hash) {
+
 		this.hash = hash;
 	}
 
@@ -66,4 +79,6 @@ public class FileBlock implements Serializable {
 						b.isDeleted() == this.isDeleted()
 		);
 	}
+
+
 }

@@ -3,6 +3,7 @@ package ru.tyurin.filesync.server.storage;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,15 +17,28 @@ public class StorageManager extends Thread {
 
 	public static final Logger LOG = Logger.getLogger(StorageManager.class);
 
-	private static final Object monitor = new Object();
 
 	private Path rootDirectory;
 
 
 	public StorageManager(String rootDirectory) throws IOException {
+		super("StorageManager");
 		LOG.debug("Creating Storage Manager...");
 		setRootDirectory(Paths.get(rootDirectory));
 		LOG.debug("Storage Manager created");
+	}
+
+	public synchronized void saveBlock(BlockNode node) throws IOException {
+		Path path = rootDirectory.resolve(String.valueOf(node.getUserId())).resolve(node.getPath());
+		if (!Files.exists(path)) {
+			Files.createDirectories(path.getParent());
+			Files.createFile(path);
+		}
+		RandomAccessFile access = new RandomAccessFile(path.toFile(), "rw");
+
+		access.seek(node.getIndex() * BlockNode.BLOCK_SIZE);
+		access.write(node.getData());
+		access.close();
 	}
 
 
@@ -32,11 +46,11 @@ public class StorageManager extends Thread {
 	public void run() {
 		LOG.debug("Starting Storage Manager");
 		while (!interrupted()) {
-			synchronized (monitor) {
+			synchronized (this) {
 				try {
-					monitor.wait();
+					wait();
 				} catch (InterruptedException e) {
-					e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+					interrupt();
 				}
 			}
 		}

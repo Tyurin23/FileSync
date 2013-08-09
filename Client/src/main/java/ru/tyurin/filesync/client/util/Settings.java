@@ -1,20 +1,18 @@
 package ru.tyurin.filesync.client.util;
 
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 public class Settings {
 
-
-	private static String directory = "/home/tyurin/tmp/sync/";
+	/**
+	 * Path to synchronization directory
+	 */
+	private String syncDirectory = "/home/tyurin/tmp/sync/";
 	private static int timeToRefresh = 1000;
-	private static int blockSize = 1000000;
 
 	/**
 	 * Path to program directory
 	 */
-	private static Path storagePath = Paths.get("");
+	private String programPath = "";
 	private boolean disableUI = false;
 
 	public static Settings getDefaultSettings() {
@@ -23,19 +21,20 @@ public class Settings {
 
 
 	public String getSyncDirectory() {
-		return directory;
+		return syncDirectory;
+	}
+
+	public void setSyncDirectory(String syncDirectory) {
+		this.syncDirectory = syncDirectory;
 	}
 
 	public static synchronized int getTimeToRefresh() {
 		return timeToRefresh;
 	}
 
-	public static int getBlockSize() {
-		return blockSize;
-	}
 
-	public Path getStoragePath() {
-		return storagePath;
+	public String getProgramPath() {
+		return programPath;
 	}
 
 	public boolean isDisableUI() {

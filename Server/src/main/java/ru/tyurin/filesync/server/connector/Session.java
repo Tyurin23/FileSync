@@ -15,8 +15,6 @@ public class Session extends Thread {
 
 	public static Logger LOG = Logger.getLogger(Session.class);
 
-	private static final Object monitor = new Object();
-
 	private Connector connector;
 	private Queue<BlockNode> pool;
 
@@ -26,6 +24,7 @@ public class Session extends Thread {
 	private boolean sleep = true;
 
 	public Session(Queue<BlockNode> pool) {
+		super("Session");
 		this.pool = pool;
 	}
 
@@ -33,12 +32,14 @@ public class Session extends Thread {
 		this(pool);
 		this.number = number;
 		LOG.debug(String.format("Session %d created", number));
+		this.setName("Session " + number);
 	}
 
 	public synchronized void setConnector(Connector connector) throws IOException {
 		if (authorization(connector)) {
 			connector.sendObject(ConnectionStatus.OK);
 			this.connector = connector;
+			wakeup();
 			LOG.debug(String.format("Session %d has new connection", number));
 		} else {
 			connector.sendObject(ConnectionStatus.ERROR);
@@ -62,9 +63,7 @@ public class Session extends Thread {
 
 	public synchronized void wakeup() {
 		this.sleep = false;
-		synchronized (monitor) {
-			monitor.notifyAll();
-		}
+		notifyAll();
 		LOG.debug(String.format("Session %d wakeup", number));
 	}
 
@@ -72,11 +71,10 @@ public class Session extends Thread {
 	public void run() {
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
-				LOG.debug("session run " + number);
 				if (sleep) {
-					synchronized (monitor) {
+					synchronized (this) {
 						LOG.debug("WAIT " + number);
-						monitor.wait();
+						wait();
 						LOG.debug("NOTIFY " + number);
 					}
 				}
@@ -95,6 +93,8 @@ public class Session extends Thread {
 	protected void tick() throws IOException, ClassNotFoundException {
 		if (connector != null) {
 			processRequest((Request) connector.getObject());
+		} else {
+			sleep = true;
 		}
 	}
 
@@ -129,12 +129,14 @@ public class Session extends Thread {
 	protected void saveBlockRequest() throws IOException {
 		FileTransferPart part = (FileTransferPart) connector.getObject();
 		if (part != null) {
-			BlockNode node = new BlockNode(part.getPath(), userId);
+			BlockNode node = new BlockNode(part.getPath(), part.getBlockIndex(), userId);
 			node.setData(part.getData());
 			pool.add(node);
 			connector.sendObject(ConnectionStatus.OK);
+		} else {
+			connector.sendObject(ConnectionStatus.ERROR);
 		}
-		connector.sendObject(ConnectionStatus.ERROR);
+
 	}
 
 

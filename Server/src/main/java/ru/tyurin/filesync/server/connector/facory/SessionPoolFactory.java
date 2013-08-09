@@ -22,7 +22,6 @@ public class SessionPoolFactory extends BasePoolableObjectFactory<Session> {
 
 	@Override
 	public Session makeObject() throws Exception {
-		LOG.debug("session created " + count);
 		Session s = new Session(this.dataQueue, count);
 		count++;
 		s.start();
@@ -43,6 +42,7 @@ public class SessionPoolFactory extends BasePoolableObjectFactory<Session> {
 	@Override
 	public boolean validateObject(Session session) {
 		if (!session.isInterrupted()) {
+			LOG.debug("Session interrupted ");
 			return true;
 		} else {
 			return false;

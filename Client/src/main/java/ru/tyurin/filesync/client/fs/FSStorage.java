@@ -6,46 +6,59 @@ import ru.tyurin.filesync.shared.FileNode;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FSStorage {
 
-	private final String fileName = "storage.data";
+	public static final String FILENAME = "storage.data";
 
 	private File storageFile;
 
-	public FSStorage(Path storageFile) throws IOException {
-		setStorageFile(storageFile);
+	public FSStorage(String storageFile) throws IOException {
+		setStorageFile(Paths.get(storageFile));
 	}
 
 	protected FSStorage() {
 	}
 
-	public void save(List<FileNode> nodes) throws IOException {
+	public FSContainer getContainer() throws IOException {
+		return load(null);
+	}
+
+
+	public void save(FSContainer container) throws IOException {
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(storageFile));
-		out.writeObject(nodes);
+		out.writeObject(container.getCollection());
 		out.flush();
 		out.close();
 	}
 
-	public List<FileNode> load() throws IOException {
-		ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(storageFile)));
-		List<FileNode> nodes = null;
+	public FSContainer load(FSContainer container) throws IOException {
+		if (container == null) {
+			container = new FSContainer();
+		}
+		ObjectInputStream in = null;
+		List<FileNode> nodes = new ArrayList<>();
 		try {
+			in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(storageFile)));
 			nodes = (List<FileNode>) in.readObject();
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException | EOFException e) {
 			e.printStackTrace();
 		} finally {
-			in.close();
+			if (in != null)
+				in.close();
 		}
-		return nodes;
+		container.setCollection(nodes);
+		return container;
 	}
 
 	protected void setStorageFile(Path path) throws IOException {
 		if (!Files.isWritable(path)) {
 			throw new IllegalArgumentException("Storage dir not writable");
 		}
-		Path file = path.resolve(fileName);
+		Path file = path.resolve(FILENAME);
 		if (!Files.exists(file)) {
 			Files.createFile(file);
 		}
