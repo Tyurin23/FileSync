@@ -121,5 +121,13 @@ public class Settings {
 		properties.setProperty(SYNC_DIRECTORY_KEY, syncDirectory);
 	}
 
+	public void setLogin(String login) {
+		properties.setProperty(LOGIN_KEY, login);
+	}
+
+	public void setPassword(String password) {
+		properties.setProperty(PASSWORD_KEY, password);
+	}
+
 
 }

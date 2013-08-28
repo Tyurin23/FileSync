@@ -46,6 +46,8 @@ public class FileSyncServerTest {
 
 		settings = Settings.getDefaultSettings();
 		settings.setDisableUI(true);
+		settings.setLogin("test");
+		settings.setPassword("test");
 		settings.setSyncDirectory(clientSyncDirectory);
 
 	}
@@ -102,9 +104,9 @@ public class FileSyncServerTest {
 		long srvHash = serverState.getHash();
 		System.out.println(srvHash + " = " + cliHash);
 //		assertTrue(state.getExistingFiles().equals(serverState.getExistingFiles()));
-		synchronized (monitor) {
-			monitor.wait();
-		}
+//		synchronized (monitor) {
+//			monitor.wait();
+//		}
 		assertEquals(cliHash, srvHash);
 
 	}

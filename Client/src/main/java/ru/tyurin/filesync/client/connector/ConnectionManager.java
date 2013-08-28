@@ -35,7 +35,7 @@ public class ConnectionManager {
 
 	protected SocketFactory factory;
 
-	protected Connector connector;
+	protected ClientSocketConnector connector;
 
 	public static ConnectionManager createSSLInstance() throws Exception {
 		if (instance == null) {
@@ -48,17 +48,23 @@ public class ConnectionManager {
 			SSLSocketFactory factory = sslContext.getSocketFactory();
 			instance = new ConnectionManager(factory);
 		}
-		return instance;
+		return getInstance();
 	}
 
+	public static ConnectionManager createInstance() {
+		if (instance == null) {
+			instance = new ConnectionManager(SocketFactory.getDefault());
+		}
+		return getInstance();
+	}
 
-	public ConnectionManager() {
-		this(SocketFactory.getDefault());
-		LOG.debug("Connection manager created");
+	public static ConnectionManager getInstance() {
+		return instance;
 	}
 
 	public ConnectionManager(SocketFactory factory) {
 		this.factory = factory;
+		LOG.debug("Connection manager created");
 	}
 
 	public void setLogin(String login) {
@@ -70,23 +76,26 @@ public class ConnectionManager {
 	}
 
 	public boolean testConnection() throws Exception {
-		Connector connector = getAuthorizedConnector();
-		if (connector == null) {
-			return false;
-		} else {
+		if (getConnector() != null) {
 			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public boolean testAuthorization() throws Exception {
+		if (getAuthorizedConnector() != null) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
 	public boolean registration(String login, String password) throws IOException {
-		Connector connector = getConnector();
-		connector.sendObject(Request.REGISTRATION);
-		ConnectionStatus status = (ConnectionStatus) connector.getObject();
-		if (status == ConnectionStatus.OK) {
+		ClientSocketConnector connector = getConnector();
+		if (connector.sendRequest(Request.REGISTRATION) == ConnectionStatus.OK) {
 			UserTransfer userTransfer = new UserTransfer(login, password);
-			connector.sendObject(userTransfer);
-			status = (ConnectionStatus) connector.getObject();
-			if (status == ConnectionStatus.OK) {
+			if (connector.sendObject(userTransfer) == ConnectionStatus.OK) {
 				return true;
 			}
 		}
@@ -94,28 +103,24 @@ public class ConnectionManager {
 	}
 
 	public List<FileTransferPart> getFileNodes() throws Exception {
-		Connector connector = getAuthorizedConnector();
+		ClientSocketConnector connector = getAuthorizedConnector();
 		connector.sendObject(Request.GET_FILE_NODES);
-		List<FileTransferPart> nodes = (List<FileTransferPart>) connector.getObject();
+		List<FileTransferPart> nodes = (List<FileTransferPart>) connector.receiveObject();
 		return nodes;
 	}
 
 	public boolean sendBlock(FileNode node, FileBlock block, byte[] data) throws Exception {
+		ClientSocketConnector connector = getAuthorizedConnector();
 		BlockTransferPart part = new BlockTransferPart(node.getPath(), block.getIndex(), data);
-		Connector connector = getAuthorizedConnector();
-		connector.sendObject(Request.SAVE_BLOCK);
-		ConnectionStatus status = (ConnectionStatus) connector.getObject();
-		if (status == ConnectionStatus.OK) {
-			connector.sendObject(part);
-			status = (ConnectionStatus) connector.getObject();
-			if (status == ConnectionStatus.OK) {
+		if (connector.sendRequest(Request.SAVE_BLOCK) == ConnectionStatus.OK) {
+			if (connector.sendObject(part) == ConnectionStatus.OK) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	protected Connector getAuthorizedConnector() throws Exception {
+	protected ClientSocketConnector getAuthorizedConnector() throws Exception {
 		if (connector == null) {
 			connector = getConnector();
 			if (connector == null) {
@@ -124,14 +129,14 @@ public class ConnectionManager {
 			LOG.debug("Client Connection created");
 			if (!authorization(connector)) {
 				connector.close();
-				connector = null;
+				throw new Exception("Authorization fail");
 			}
 		}
 		return connector;
 	}
 
-	private Connector getConnector() throws IOException {
-		Connector connector = null;
+	private ClientSocketConnector getConnector() throws IOException {
+		ClientSocketConnector connector = null;
 		try {
 			connector = new ClientSocketConnector(factory.createSocket(host, port));
 		} catch (ConnectException e) {
@@ -140,14 +145,11 @@ public class ConnectionManager {
 		return connector;
 	}
 
-	private boolean authorization(Connector connector) throws IOException {
-		connector.sendObject(Request.AUTH);
-		ConnectionStatus status = (ConnectionStatus) connector.getObject();
-		if (status == ConnectionStatus.OK) {
+	private boolean authorization(ClientSocketConnector connector) throws IOException {
+		LOG.debug("Trying auth: " + login + " " + pass);
+		if (connector.sendRequest(Request.AUTH) == ConnectionStatus.OK) {
 			UserTransfer userTransfer = new UserTransfer(login, pass);
-			connector.sendObject(userTransfer);
-			status = (ConnectionStatus) connector.getObject();
-			if (status == ConnectionStatus.OK) {
+			if (connector.sendObject(userTransfer) == ConnectionStatus.OK) {
 				return true;
 			}
 		}

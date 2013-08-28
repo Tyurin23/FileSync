@@ -7,10 +7,8 @@ import ru.tyurin.filesync.client.connector.ConnectionManager;
 import ru.tyurin.filesync.client.fs.*;
 import ru.tyurin.filesync.client.util.Settings;
 import ru.tyurin.filesync.shared.BlockTransferPart;
-import ru.tyurin.filesync.shared.FileTransferPart;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -86,9 +84,9 @@ public class FileSyncClient extends Thread {
 
 		fsManager = new FSManager(settings.getSyncDirectory(), container, inputParts);
 
-		connectionManager = ConnectionManager.createSSLInstance();
-
-
+		connectionManager = ConnectionManager.createSSLInstance();//todo
+		connectionManager.setLogin(settings.getLogin());
+		connectionManager.setPass(settings.getPassword());
 		LOG.debug("Client created");
 
 	}
@@ -99,10 +97,17 @@ public class FileSyncClient extends Thread {
 		fsManager.start();
 		while (!interrupted()) {
 			try {
-				if (connectionManager.testConnection()) {
-					List<FileTransferPart> fileParts = connectionManager.getFileNodes();
-					for (FileTransferPart part : fileParts) {
-//					FileNode node = container.get()
+				if (connectionManager.testAuthorization()) {
+					for (FileNode node : container.getCollection()) {
+						if (node.getStatus() == FileStatus.NEW || node.getStatus() == FileStatus.MODIFIED) {
+							status = 1;
+							try {
+								sendModifiedBlock(node);
+							} catch (Exception e) {
+								e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+								interrupt();
+							}
+						}
 					}
 				} else {
 					Thread.sleep(3000);
@@ -110,20 +115,10 @@ public class FileSyncClient extends Thread {
 				}
 
 			} catch (Exception e) {
-				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+				e.printStackTrace();
 			}
 
-			for (FileNode node : container.getCollection()) {
-				if (node.getStatus() == FileStatus.NEW || node.getStatus() == FileStatus.MODIFIED) {
-					status = 1;
-					try {
-						sendModifiedBlock(node);
-					} catch (Exception e) {
-						e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-						interrupt();
-					}
-				}
-			}
+
 			status = 0;
 			try {
 				Thread.sleep(DELAY);

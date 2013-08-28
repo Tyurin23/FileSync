@@ -110,6 +110,7 @@ public class Session extends Thread {
 				break;
 			case AUTH:
 				authorization();
+				break;
 			default:
 				connector.sendObject(ConnectionStatus.ERROR);
 				return;

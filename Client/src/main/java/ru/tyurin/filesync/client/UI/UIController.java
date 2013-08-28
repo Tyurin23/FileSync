@@ -51,7 +51,7 @@ public class UIController {
 			ConnectionManager manager = ConnectionManager.createSSLInstance();
 			manager.setLogin(login);
 			manager.setPass(password);
-			isAuth = manager.testConnection();
+			isAuth = manager.testAuthorization();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

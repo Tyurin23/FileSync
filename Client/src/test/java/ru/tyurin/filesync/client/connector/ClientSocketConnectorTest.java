@@ -73,7 +73,6 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 
 	@Test
 	public void testConnector() throws IOException {
-//		connector = new Connector("8.8.8.8");
 	}
 
 	@Test
@@ -93,7 +92,7 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 		BlockTransferPart sentObject = new BlockTransferPart(name);
 		connector = getMockedConnector();
 		when(connector.input.readObject()).thenReturn(sentObject);
-		Object receivedObject = connector.getObject();
+		Object receivedObject = connector.receiveObject();
 		verify(connector.input).readObject();
 		assertEquals(sentObject, receivedObject);
 	}

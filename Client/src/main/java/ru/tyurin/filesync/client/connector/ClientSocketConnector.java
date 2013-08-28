@@ -1,6 +1,8 @@
 package ru.tyurin.filesync.client.connector;
 
 import org.apache.log4j.Logger;
+import ru.tyurin.filesync.shared.ConnectionStatus;
+import ru.tyurin.filesync.shared.Request;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,7 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 
-public class ClientSocketConnector implements Connector {
+public class ClientSocketConnector {
 
 	public static Logger LOG = Logger.getLogger(ClientSocketConnector.class);
 
@@ -28,7 +30,6 @@ public class ClientSocketConnector implements Connector {
 	}
 
 
-	@Override
 	public void close() throws IOException {
 		input.close();
 		output.close();
@@ -37,17 +38,13 @@ public class ClientSocketConnector implements Connector {
 	}
 
 
-	@Override
-	public void sendObject(Object obj) throws IOException {
-		if (obj != null) {
-			output.writeObject(obj);
-			output.flush();
-			LOG.debug(String.format("Object %s sent", obj));
-		}
+	public ConnectionStatus sendObject(Object obj) throws IOException {
+		sendObj(obj);
+		return (ConnectionStatus) receiveObj();
 	}
 
-	@Override
-	public Object getObject() throws IOException {
+
+	public Object receiveObject() throws IOException {
 		Object obj = null;
 		try {
 			obj = input.readObject();
@@ -59,9 +56,35 @@ public class ClientSocketConnector implements Connector {
 		return obj;
 	}
 
-	@Override
+	public ConnectionStatus sendRequest(Request request) throws IOException {
+		if (request == null) {
+			throw new NullPointerException("Request is null");
+		}
+		return sendObject(request);
+	}
+
 	public boolean isClosed() {
 		return socket.isClosed();
 	}
+
+	private void sendObj(Object obj) throws IOException {
+		if (obj != null) {
+			output.writeObject(obj);
+			output.flush();
+			LOG.debug(String.format("Object %s sent", obj));
+		}
+	}
+
+	private Object receiveObj() throws IOException {
+		Object obj = null;
+		try {
+			obj = input.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		LOG.debug(String.format("Object %s read", obj));
+		return obj;
+	}
+
 
 }

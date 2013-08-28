@@ -3,6 +3,7 @@ package ru.tyurin.filesync.server.connector;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import ru.tyurin.filesync.client.connector.ClientSocketConnector;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
@@ -15,7 +16,7 @@ public class ConnectorTest {
 
 	final String HOST = "localhost";
 	final int PORT = 4444;
-	ru.tyurin.filesync.client.connector.Connector clientConnector;
+	ClientSocketConnector clientConnector;
 	Connector serverConnector;
 
 	Server server;
@@ -79,7 +80,7 @@ public class ConnectorTest {
 //		clientConnector = new ClientSSLConnector(HOST, PORT);
 //		String s = "TEST";
 //		clientConnector.sendObject(s);
-//		Object obj = clientConnector.getObject();
+//		Object obj = clientConnector.receiveObject();
 //		Assert.assertTrue(obj.equals(s));
 
 	}
