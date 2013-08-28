@@ -1,8 +1,6 @@
 package ru.tyurin.filesync.client.fs;
 
 import org.apache.commons.io.FileUtils;
-import ru.tyurin.filesync.shared.FileBlock;
-import ru.tyurin.filesync.shared.FileNode;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,6 +27,9 @@ public class FSUtils {
 	}
 
 	public static boolean blockEquals(FileBlock b1, FileBlock b2) {
+		if (b1 == null || b2 == null) {
+			return false;
+		}
 		if (b1.getHash() != b2.getHash()) {
 			return false;
 		} else if (b1.getIndex() != b2.getIndex()) {
@@ -107,8 +108,13 @@ public class FSUtils {
 
 	protected static byte[] getBlockData(int index, int size, RandomAccessFile input) throws IOException {
 		byte[] bytes = new byte[size];
-		input.seek(index * size);
+		input.seek(FileBlock.BLOCK_SIZE * index);
 		input.read(bytes);
+		StringBuilder builder = new StringBuilder();
+		for (byte b : bytes) {
+			builder.append(String.format("%02X", b));
+		}
+//		System.out.println(index + " " +builder.toString());
 		return bytes;
 	}
 

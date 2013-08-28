@@ -2,6 +2,7 @@ package ru.tyurin.filesync.server;
 
 import org.apache.log4j.Logger;
 import ru.tyurin.filesync.server.connector.ConnectionManager;
+import ru.tyurin.filesync.server.db.EntityProvider;
 import ru.tyurin.filesync.server.storage.BlockNode;
 import ru.tyurin.filesync.server.storage.StorageManager;
 
@@ -26,6 +27,13 @@ public class FileSyncServer extends Thread {
 			connectionManager = ConnectionManager.getDefaultInstance();
 		}
 		storageManager = new StorageManager(cfg.storageDirectory);
+		EntityProvider.createInstance(
+				cfg.getDbHost(),
+				cfg.getDbPort(),
+				cfg.getDbName(),
+				cfg.getDbUser(),
+				cfg.getDbPassword()
+		);
 
 	}
 

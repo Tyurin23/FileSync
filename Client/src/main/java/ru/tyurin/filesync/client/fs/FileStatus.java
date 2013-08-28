@@ -1,4 +1,4 @@
-package ru.tyurin.filesync.shared;
+package ru.tyurin.filesync.client.fs;
 
 
 import java.io.Serializable;

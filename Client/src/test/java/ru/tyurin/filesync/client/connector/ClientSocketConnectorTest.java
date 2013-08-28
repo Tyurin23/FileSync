@@ -5,7 +5,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import ru.tyurin.filesync.shared.FileTransferPart;
+import ru.tyurin.filesync.shared.BlockTransferPart;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 	@Test
 	public void testSendData() throws Exception {
 		final String name = "TEST";
-		FileTransferPart sentObject = new FileTransferPart(name);
+		BlockTransferPart sentObject = new BlockTransferPart(name);
 		connector = getMockedConnector();
 		connector.sendObject(sentObject);
 		verify(output).writeObject(sentObject);
@@ -90,7 +90,7 @@ public class ClientSocketConnectorTest extends ClientSocketConnector {
 	)
 	public void testGetData() throws Exception {
 		final String name = "TEST";
-		FileTransferPart sentObject = new FileTransferPart(name);
+		BlockTransferPart sentObject = new BlockTransferPart(name);
 		connector = getMockedConnector();
 		when(connector.input.readObject()).thenReturn(sentObject);
 		Object receivedObject = connector.getObject();

@@ -1,10 +1,7 @@
 package ru.tyurin.filesync.client.fs;
 
 import org.apache.log4j.Logger;
-import ru.tyurin.filesync.shared.FileBlock;
-import ru.tyurin.filesync.shared.FileNode;
-import ru.tyurin.filesync.shared.FileStatus;
-import ru.tyurin.filesync.shared.FileTransferPart;
+import ru.tyurin.filesync.shared.BlockTransferPart;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,14 +16,16 @@ public class FSManager extends Thread {
 	public static Logger LOG = Logger.getLogger(FSManager.class);
 
 	private FSContainer container;
-	private Queue<FileTransferPart> input;
+	private Queue<BlockTransferPart> input;
 	private Path base;
 	private FSVisitor visitor;
+
+	private long hash = 0;
 
 	private final boolean disableHidden = true;
 	private final int TIMER = 1000;
 
-	public FSManager(String path, FSContainer container, Queue<FileTransferPart> input) throws IOException {
+	public FSManager(String path, FSContainer container, Queue<BlockTransferPart> input) throws IOException {
 		super("FSManager");
 		Path p = Paths.get(path);
 		if (!verifyPath(p)) {
@@ -36,6 +35,17 @@ public class FSManager extends Thread {
 		this.container = container;
 		visitor = new FSVisitor(this.base, this.container);
 		this.input = input;
+	}
+
+	public synchronized long getHash() {
+		if (hash == 0) {
+			refreshHash();
+		}
+		return hash;
+	}
+
+	private void refreshHash() {
+
 	}
 
 	private boolean verifyPath(Path path) {
@@ -63,7 +73,7 @@ public class FSManager extends Thread {
 					node.setStatus(FileStatus.BAD);
 				}
 			} else {
-				if (Files.exists(Paths.get(node.getPath()))) {
+				if (Files.exists(Paths.get(node.getAbsolutePath()))) {
 					node.setStatus(FileStatus.MODIFIED);
 					refreshBlocks(node);
 				} else {
@@ -81,8 +91,10 @@ public class FSManager extends Thread {
 	}
 
 	protected void refreshBlocks(FileNode node) throws IOException {
-		List<FileBlock> newBlocks = FSUtils.getBlocks(Paths.get(node.getPath()));
+		List<FileBlock> newBlocks = FSUtils.getBlocks(Paths.get(node.getAbsolutePath()));
+		LOG.debug(String.format("nb %d, ob %d", newBlocks.size(), node.getBlocks().size()));
 		if (newBlocks.size() < node.getBlocks().size()) {
+
 			for (int i = node.getBlocks().size() - newBlocks.size() - 1; i < node.getBlocks().size(); i++) {
 				FileBlock block = node.getBlocks().get(i);
 				block.setDeleted(true);
@@ -90,8 +102,8 @@ public class FSManager extends Thread {
 			}
 		}
 		for (FileBlock block : newBlocks) {
-			if (!FSUtils.blockEquals(block, node.getBlocks().get(block.getIndex()))) {
-				node.getBlocks().set(block.getIndex(), block);
+			if (block.getIndex() > node.getBlocks().size() || !FSUtils.blockEquals(block, node.getBlocks().get(block.getIndex()))) {
+				node.getBlocks().put(block.getIndex(), block);
 			}
 		}
 	}
@@ -131,6 +143,7 @@ public class FSManager extends Thread {
 		saveInput();
 		checkChanges();
 	}
+
 
 	protected boolean isIncompatibleFile(Path file) throws IOException {
 		if (Files.isHidden(file)) {

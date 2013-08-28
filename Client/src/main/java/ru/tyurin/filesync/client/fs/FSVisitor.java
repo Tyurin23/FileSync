@@ -1,7 +1,5 @@
 package ru.tyurin.filesync.client.fs;
 
-import ru.tyurin.filesync.shared.FileNode;
-
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -20,7 +18,7 @@ public class FSVisitor extends SimpleFileVisitor<Path> {
 			throw new NullPointerException("Null argument expected");
 		}
 		if (!Files.isDirectory(root)) {
-			throw new IllegalArgumentException("Root path is not a directory");
+			throw new IllegalArgumentException(String.format("Root path %s is not a directory", root));
 		}
 		if (!Files.isReadable(root)) {
 			throw new IllegalArgumentException("Root path is not readable");

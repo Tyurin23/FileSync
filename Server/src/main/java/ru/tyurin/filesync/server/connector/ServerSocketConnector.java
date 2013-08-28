@@ -2,6 +2,7 @@ package ru.tyurin.filesync.server.connector;
 
 import org.apache.log4j.Logger;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -33,8 +34,8 @@ public class ServerSocketConnector implements Connector {
 		try {
 			obj = input.readObject();
 			LOG.debug("Object receaved " + obj);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | EOFException e) {
+//			LOG.debug("ERROR " + e.getMessage());
 		}
 		return obj;
 	}

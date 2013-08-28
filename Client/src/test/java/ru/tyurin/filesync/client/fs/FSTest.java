@@ -2,15 +2,14 @@ package ru.tyurin.filesync.client.fs;
 
 import org.apache.commons.io.FileUtils;
 import org.testng.annotations.*;
+import ru.tyurin.filecreator.FileCreator;
 import ru.tyurin.filesync.client.util.Settings;
-import ru.tyurin.filesync.shared.FileNode;
-import ru.tyurin.filesync.shared.FileTransferPart;
+import ru.tyurin.filesync.shared.BlockTransferPart;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -22,7 +21,7 @@ public class FSTest {
 	public static final String path = "/home/tyurin/tmp/testSync/";
 	Path basicDir;
 
-	Queue<FileTransferPart> input;
+	Queue<BlockTransferPart> input;
 
 	FSContainer container;
 
@@ -43,7 +42,7 @@ public class FSTest {
 	public void setUpMethod() throws Exception {
 		storage = new FSStorage(Settings.getDefaultSettings().getProgramPath());
 		container = storage.getContainer();
-		input = new ArrayBlockingQueue<FileTransferPart>(100);
+		input = new ArrayBlockingQueue<BlockTransferPart>(100);
 		manager = new FSManager(basicDir.toString(), container, input);
 		manager.start();
 	}
@@ -77,12 +76,12 @@ public class FSTest {
 			dependsOnMethods = "testSingleFile"
 	)
 	public void FSTest() throws Exception {
-		List<File> files = FileCreator.createTree(basicDir.toFile(), 3, 5);
-		Thread.sleep(3000);
-		for (File file : files) {
-			FileNode node = container.get(file.toPath());
-			assertNotNull(node);
-		}
+//		List<File> files = FileCreator.createTree(basicDir.toFile(), 3, 5);
+//		Thread.sleep(3000);
+//		for (File file : files) {
+//			FileNode node = container.get(file.toPath());
+//			assertNotNull(node);
+//		}
 	}
 
 	@Test

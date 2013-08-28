@@ -9,5 +9,6 @@ import java.io.Serializable;
  */
 public enum ConnectionStatus implements Serializable {
 	OK,
-	ERROR
+	ERROR,
+	AUTHENTICATION_ERROR
 }

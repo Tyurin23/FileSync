@@ -6,8 +6,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import ru.tyurin.filesync.client.util.Settings;
-import ru.tyurin.filesync.shared.FileBlock;
-import ru.tyurin.filesync.shared.FileNode;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -2,22 +2,16 @@ package ru.tyurin.filesync.shared;
 
 import java.io.Serializable;
 
+/**
+ * User: tyurin
+ * Date: 8/9/13
+ * Time: 1:48 PM
+ */
 public class FileTransferPart implements Serializable {
 
-
 	private String path;
-	private byte[] data;
-	private int blockIndex;
-
-	public FileTransferPart(String path, int blockIndex, byte[] data) {
-		this.path = path;
-		this.data = data;
-		this.blockIndex = blockIndex;
-	}
-
-	public FileTransferPart(String path) {
-		this.path = path;
-	}
+	private long size;
+	private long hash;
 
 	public String getPath() {
 		return path;
@@ -27,38 +21,19 @@ public class FileTransferPart implements Serializable {
 		this.path = path;
 	}
 
-	public byte[] getData() {
-		return data;
+	public long getSize() {
+		return size;
 	}
 
-	public void setData(byte[] data) {
-		this.data = data;
+	public void setSize(long size) {
+		this.size = size;
 	}
 
-	public int getBlockIndex() {
-		return blockIndex;
+	public long getHash() {
+		return hash;
 	}
 
-	public void setBlockIndex(int blockIndex) {
-		this.blockIndex = blockIndex;
+	public void setHash(long hash) {
+		this.hash = hash;
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) return true;
-		if (!(obj instanceof FileTransferPart)) {
-			return false;
-		}
-		FileTransferPart part = (FileTransferPart) obj;
-		boolean equals = true;
-		equals &= part.equals(part.path);
-		equals &= data.equals(part.data);
-		return equals;
-	}
-
-	@Override
-	public String toString() {
-		return String.format("%s[%d]", path, data.length);
-	}
-
 }

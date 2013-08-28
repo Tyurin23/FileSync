@@ -2,9 +2,10 @@ package ru.tyurin.filesync.server.connector;
 
 import org.apache.log4j.Logger;
 import ru.tyurin.filesync.server.db.UserProvider;
+import ru.tyurin.filesync.server.db.tables.UserEntity;
 import ru.tyurin.filesync.server.storage.BlockNode;
+import ru.tyurin.filesync.shared.BlockTransferPart;
 import ru.tyurin.filesync.shared.ConnectionStatus;
-import ru.tyurin.filesync.shared.FileTransferPart;
 import ru.tyurin.filesync.shared.Request;
 import ru.tyurin.filesync.shared.UserTransfer;
 
@@ -16,9 +17,10 @@ public class Session extends Thread {
 	public static Logger LOG = Logger.getLogger(Session.class);
 
 	private Connector connector;
+
 	private Queue<BlockNode> pool;
 
-	private int userId;
+	private UserEntity user;
 
 	int number = -1;
 	private boolean sleep = true;
@@ -36,15 +38,9 @@ public class Session extends Thread {
 	}
 
 	public synchronized void setConnector(Connector connector) throws IOException {
-		if (authorization(connector)) {
-			connector.sendObject(ConnectionStatus.OK);
-			this.connector = connector;
-			wakeup();
-			LOG.debug(String.format("Session %d has new connection", number));
-		} else {
-			connector.sendObject(ConnectionStatus.ERROR);
-			connector.close();
-		}
+		this.connector = connector;
+		wakeup();
+		LOG.debug(String.format("Session %d has new connection", number));
 	}
 
 	public boolean isClose() {
@@ -85,7 +81,7 @@ public class Session extends Thread {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {
-				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+				e.printStackTrace();
 			}
 		}
 	}
@@ -112,9 +108,11 @@ public class Session extends Thread {
 			case SAVE_BLOCK:
 				saveBlockRequest();
 				break;
+			case AUTH:
+				authorization();
 			default:
-				break;
-
+				connector.sendObject(ConnectionStatus.ERROR);
+				return;
 		}
 	}
 
@@ -127,34 +125,44 @@ public class Session extends Thread {
 	}
 
 	protected void saveBlockRequest() throws IOException {
-		FileTransferPart part = (FileTransferPart) connector.getObject();
+		if (user == null) {
+			connector.sendObject(ConnectionStatus.AUTHENTICATION_ERROR);
+			return;
+		} else {
+			connector.sendObject(ConnectionStatus.OK);
+		}
+		BlockTransferPart part = (BlockTransferPart) connector.getObject();
 		if (part != null) {
-			BlockNode node = new BlockNode(part.getPath(), part.getBlockIndex(), userId);
+			BlockNode node = new BlockNode(part.getPath(), part.getBlockIndex(), user.getId());
 			node.setData(part.getData());
 			pool.add(node);
 			connector.sendObject(ConnectionStatus.OK);
 		} else {
 			connector.sendObject(ConnectionStatus.ERROR);
 		}
+	}
 
+	protected void registration() throws IOException {
+		connector.sendObject(ConnectionStatus.OK);
+		UserTransfer userTransfer = (UserTransfer) connector.getObject();
+		UserEntity user = new UserProvider().createUser(userTransfer.getLogin(), userTransfer.getPassword());
+		if (user != null) {
+			connector.sendObject(ConnectionStatus.OK);
+		} else {
+			connector.sendObject(ConnectionStatus.ERROR);
+		}
 	}
 
 
-	protected boolean authorization(Connector connector) throws IOException {
-		Request req = (Request) connector.getObject();
-		if (req == Request.AUTH) {
-			UserTransfer userTransfer = (UserTransfer) connector.getObject();
-			if (userTransfer == null) {
-				return false;
-			}
-			int id = UserProvider.authentication(userTransfer.getLogin(), userTransfer.getPassword());
-			if (id == UserProvider.AUTH_FAIL) {
-				return false;
-			} else {
-				userId = id;
-				return true;
-			}
+	protected void authorization() throws IOException {
+		connector.sendObject(ConnectionStatus.OK);
+		UserTransfer userTransfer = (UserTransfer) connector.getObject();
+		UserEntity user = new UserProvider().findByLoginAndPassword(userTransfer.getLogin(), userTransfer.getPassword());
+		if (user != null) {
+			this.user = user;
+			connector.sendObject(ConnectionStatus.OK);
+		} else {
+			connector.sendObject(ConnectionStatus.AUTHENTICATION_ERROR);
 		}
-		return false;
 	}
 }

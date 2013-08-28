@@ -54,6 +54,7 @@ public class FileSyncServerTest {
 	public void setUpMethod() throws Exception {
 		FileUtils.cleanDirectory(new File(clientSyncDirectory));
 		FileUtils.cleanDirectory(new File(serverStorageDirectory));
+		Files.deleteIfExists(Paths.get(settings.getProgramPath() + FSStorage.FILENAME));
 
 		server = new FileSyncServer(cfg);
 		client = new FileSyncClient(settings);
@@ -83,17 +84,15 @@ public class FileSyncServerTest {
 		client.start();
 		Thread.sleep(1000);
 
-//		state = FileCreator.createTree(new File(settings.getSyncDirectory()), 0, 1);
-		state = new FileCreator.Builder(new File(settings.getSyncDirectory())).maxDepth(0).maxFiles(1).maxFileSize(5000000).dirProbability(0.0).build().createTree();
+		state = new FileCreator.Builder(new File(settings.getSyncDirectory())).maxDepth(0).maxFiles(3).maxFileSize(100).dirProbability(0.0).build().createTree();
 
 
 		System.out.println("Files created - " + state.getExistingFiles().size());
-		Thread.sleep(3000);
+		Thread.sleep(5000);
 
 		long time = System.currentTimeMillis();
 		final long timeout = 10000;
 		while (client.status != 0) {
-			System.out.println(client.status);
 			if (System.currentTimeMillis() - time > timeout) {
 				fail("timeout");
 			}
@@ -103,9 +102,9 @@ public class FileSyncServerTest {
 		long srvHash = serverState.getHash();
 		System.out.println(srvHash + " = " + cliHash);
 //		assertTrue(state.getExistingFiles().equals(serverState.getExistingFiles()));
-//		synchronized (monitor) {
-//			monitor.wait();
-//		}
+		synchronized (monitor) {
+			monitor.wait();
+		}
 		assertEquals(cliHash, srvHash);
 
 	}

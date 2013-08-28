@@ -1,5 +1,7 @@
 package ru.tyurin.filesync.server.storage;
 
+import ru.tyurin.filesync.client.fs.FileBlock;
+
 import java.util.Date;
 
 /**
@@ -9,7 +11,7 @@ import java.util.Date;
  */
 public class BlockNode {
 
-	public static final int BLOCK_SIZE = 1000000;
+	public static final int BLOCK_SIZE = FileBlock.BLOCK_SIZE;
 
 	private String id;
 	private int userId;

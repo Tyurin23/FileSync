@@ -10,6 +10,11 @@ public class Config {
 	protected String host = "localhost";
 	protected int port = 4444;
 	protected boolean enableSSL = true;
+	private String dbHost = "localhost";
+	private int dbPort = 5432;
+	private String dbName = "fsync";
+	private String dbUser = "fsync";
+	private String dbPassword = "fsync";
 	protected String keyStore = "/home/tyurin/code/FileSync/Server/src/main/resources/sslKeyStore.jks"; //todo
 	protected String keyStorePassword = "password";
 	protected String storageDirectory = "/home/tyurin/tmp/FSServer/";
@@ -68,5 +73,45 @@ public class Config {
 
 	public void setStorageDirectory(String storageDirectory) {
 		this.storageDirectory = storageDirectory;
+	}
+
+	public String getDbHost() {
+		return dbHost;
+	}
+
+	public void setDbHost(String dbHost) {
+		this.dbHost = dbHost;
+	}
+
+	public int getDbPort() {
+		return dbPort;
+	}
+
+	public void setDbPort(int dbPort) {
+		this.dbPort = dbPort;
+	}
+
+	public String getDbUser() {
+		return dbUser;
+	}
+
+	public void setDbUser(String dbUser) {
+		this.dbUser = dbUser;
+	}
+
+	public String getDbPassword() {
+		return dbPassword;
+	}
+
+	public void setDbPassword(String dbPassword) {
+		this.dbPassword = dbPassword;
+	}
+
+	public String getDbName() {
+		return dbName;
+	}
+
+	public void setDbName(String dbName) {
+		this.dbName = dbName;
 	}
 }

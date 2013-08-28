@@ -1,5 +1,10 @@
 package ru.tyurin.filesync.server.db;
 
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import ru.tyurin.filesync.server.db.tables.UserEntity;
+
 /**
  * User: tyurin
  * Date: 8/6/13
@@ -7,16 +12,34 @@ package ru.tyurin.filesync.server.db;
  */
 public class UserProvider {
 
-	public static final int AUTH_FAIL = -1;
+	private EntityProvider provider;
 
-
-	public static int authentication(String login, String password) {
-		if (login == null || password == null) {
-			return AUTH_FAIL;
-		}
-		if (login.equals("test") && password.equals("test")) {
-			return 1;
-		}
-		return AUTH_FAIL;
+	public UserProvider() {
+		this.provider = EntityProvider.getInstance();
 	}
+
+	public UserEntity addUser(UserEntity user) {
+		return provider.save(user);
+	}
+
+	public UserEntity findById(int id) {
+		return provider.findById(UserEntity.class, id);
+	}
+
+	public UserEntity findByLoginAndPassword(String login, String password) {
+		Session session = provider.getSession();
+		Criteria criteria = session.createCriteria(UserEntity.class);
+		criteria.add(Restrictions.eq("login", login))
+				.add(Restrictions.eq("password", password));
+		return (UserEntity) criteria.uniqueResult();
+	}
+
+	public UserEntity createUser(String login, String password) {
+		UserEntity user = new UserEntity();
+		user.setLogin(login);
+		user.setPassword(password);
+		return provider.save(user);
+	}
+
+
 }

@@ -4,21 +4,17 @@ package ru.tyurin.filesync.client;
 import org.apache.log4j.Logger;
 import ru.tyurin.filesync.client.UI.FileSyncUI;
 import ru.tyurin.filesync.client.connector.ConnectionManager;
-import ru.tyurin.filesync.client.fs.FSContainer;
-import ru.tyurin.filesync.client.fs.FSManager;
-import ru.tyurin.filesync.client.fs.FSStorage;
-import ru.tyurin.filesync.client.fs.FSUtils;
+import ru.tyurin.filesync.client.fs.*;
 import ru.tyurin.filesync.client.util.Settings;
-import ru.tyurin.filesync.shared.FileBlock;
-import ru.tyurin.filesync.shared.FileNode;
-import ru.tyurin.filesync.shared.FileStatus;
+import ru.tyurin.filesync.shared.BlockTransferPart;
 import ru.tyurin.filesync.shared.FileTransferPart;
 
-import javax.swing.*;
+import java.io.IOException;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
-
+//todo exception handler
 public class FileSyncClient extends Thread {
 
 	public static Logger LOG = Logger.getLogger(FileSyncClient.class);
@@ -33,7 +29,43 @@ public class FileSyncClient extends Thread {
 	protected ConnectionManager connectionManager;
 	protected FSContainer container;
 	protected FSStorage storage;
-	protected Queue<FileTransferPart> inputParts = new ArrayBlockingQueue<FileTransferPart>(QUEUE_CAPACITY);
+	protected FileSyncUI ui;
+	protected Queue<BlockTransferPart> inputParts = new ArrayBlockingQueue<BlockTransferPart>(QUEUE_CAPACITY);
+
+	public static FileSyncClient loadClient() throws Exception {
+		Settings settings;
+		if (!Settings.isSettingsExist(null) || !(settings = Settings.loadSettings(null)).isConfigured()) {
+			firstStartup();
+			settings = Settings.loadSettings(null);
+		}
+		if (settings == null) {
+			return null;
+		}
+		return new FileSyncClient(settings);
+	}
+
+	public static void firstStartup() throws InterruptedException {
+		FileSyncUI ui = new FileSyncUI();
+		ui.showStartupConfig();
+		synchronized (ui.monitor) {
+			System.out.println("Block");
+			ui.monitor.wait();
+			System.out.println("notify!");
+		}
+	}
+
+	public static boolean isFirstStartup() {
+		Settings settings;
+		try {
+			if (Settings.isSettingsExist(null) && (settings = Settings.loadSettings(null)).isConfigured()) {
+				return false;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+
 
 	public FileSyncClient() throws Exception {
 		this(Settings.getDefaultSettings());
@@ -43,6 +75,12 @@ public class FileSyncClient extends Thread {
 		super("FileSyncClient");
 		LOG.debug("Creating Client");
 		this.settings = settings;
+
+		if (!settings.isDisableUI()) {
+			ui = new FileSyncUI();
+
+		}
+
 		storage = new FSStorage(settings.getProgramPath());
 		container = storage.getContainer();
 
@@ -51,14 +89,6 @@ public class FileSyncClient extends Thread {
 		connectionManager = ConnectionManager.createSSLInstance();
 
 
-		if (!settings.isDisableUI()) {
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					new FileSyncUI();
-				}
-			});
-		}
 		LOG.debug("Client created");
 
 	}
@@ -67,10 +97,24 @@ public class FileSyncClient extends Thread {
 	public void run() {
 		LOG.debug("Running client");
 		fsManager.start();
-		connectionManager.start();
 		while (!interrupted()) {
+			try {
+				if (connectionManager.testConnection()) {
+					List<FileTransferPart> fileParts = connectionManager.getFileNodes();
+					for (FileTransferPart part : fileParts) {
+//					FileNode node = container.get()
+					}
+				} else {
+					Thread.sleep(3000);
+					continue;
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			}
+
 			for (FileNode node : container.getCollection()) {
-				if (node.getStatus() == FileStatus.NEW) {
+				if (node.getStatus() == FileStatus.NEW || node.getStatus() == FileStatus.MODIFIED) {
 					status = 1;
 					try {
 						sendModifiedBlock(node);
@@ -88,14 +132,13 @@ public class FileSyncClient extends Thread {
 			}
 
 		}
-		connectionManager.interrupt();
 		fsManager.interrupt();
 		LOG.debug("Client stopped");
 	}
 
 	protected void sendModifiedBlock(FileNode node) throws Exception {
 		boolean isSend = false;
-		for (FileBlock block : node.getBlocks()) {
+		for (FileBlock block : node.getBlocks().values()) {
 			if (!block.isSync()) {
 				if (block.isDeleted()) {
 					isSend = connectionManager.sendBlock(node, block, new byte[0]);
@@ -108,7 +151,7 @@ public class FileSyncClient extends Thread {
 			}
 		}
 		node.setStatus(FileStatus.NORMAL);
-		for (FileBlock block : node.getBlocks()) {
+		for (FileBlock block : node.getBlocks().values()) {
 			if (!block.isSync()) {
 				node.setStatus(FileStatus.MODIFIED);
 			}
@@ -116,9 +159,15 @@ public class FileSyncClient extends Thread {
 	}
 
 	public static void main(String[] args) {
+
 		try {
-			FileSyncClient client = new FileSyncClient();
-			client.start();
+			if (FileSyncClient.isFirstStartup()) {
+				FileSyncClient.firstStartup();
+			}
+			FileSyncClient client = FileSyncClient.loadClient();
+			if (client != null) {
+				client.start();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

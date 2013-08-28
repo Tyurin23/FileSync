@@ -11,5 +11,6 @@ public enum Request implements Serializable {
 	GET_FILE_NODES,
 	AUTH,
 	GET_BLOCK,
-	SAVE_BLOCK
+	SAVE_BLOCK,
+	REGISTRATION
 }

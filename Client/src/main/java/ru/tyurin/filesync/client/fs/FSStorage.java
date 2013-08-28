@@ -1,8 +1,6 @@
 package ru.tyurin.filesync.client.fs;
 
 
-import ru.tyurin.filesync.shared.FileNode;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,13 +42,12 @@ public class FSStorage {
 		try {
 			in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(storageFile)));
 			nodes = (List<FileNode>) in.readObject();
+			container.setCollection(nodes);
 		} catch (ClassNotFoundException | EOFException e) {
-			e.printStackTrace();
 		} finally {
 			if (in != null)
 				in.close();
 		}
-		container.setCollection(nodes);
 		return container;
 	}
 

@@ -1,8 +1,10 @@
-package ru.tyurin.filesync.shared;
+package ru.tyurin.filesync.client.fs;
 
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class FileNode implements Serializable {
@@ -12,14 +14,16 @@ public class FileNode implements Serializable {
 	private long space;
 	private long hash;
 	private FileStatus status = FileStatus.NEW;
-	private List<FileBlock> blocks;
+	private Map<Integer, FileBlock> blocks = new HashMap<>();
 
 
 	public FileNode(Path path, long space, long hash, List<FileBlock> blocks) {
 		this.path = path.toFile().toString();
 		this.space = space;
 		this.hash = hash;
-		this.blocks = blocks;
+		for (FileBlock block : blocks) {
+			this.blocks.put(block.getIndex(), block);
+		}
 	}
 
 	public FileNode(Path path, Path absolutePath, long space, long hash, List<FileBlock> blocks) {
@@ -51,11 +55,11 @@ public class FileNode implements Serializable {
 		this.hash = hash;
 	}
 
-	public List<FileBlock> getBlocks() {
+	public Map<Integer, FileBlock> getBlocks() {
 		return blocks;
 	}
 
-	public void setBlocks(List<FileBlock> blocks) {
+	public void setBlocks(Map<Integer, FileBlock> blocks) {
 		this.blocks = blocks;
 	}
 
