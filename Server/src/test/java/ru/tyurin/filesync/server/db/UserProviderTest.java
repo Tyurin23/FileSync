@@ -21,7 +21,7 @@ public class UserProviderTest {
 
 	@BeforeClass
 	public void setUp() throws Exception {
-		EntityProvider.createInstance(DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD);
+		EntityProvider.createInstance(EntityProvider.POSTGRESQL, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD);
 	}
 
 	@BeforeMethod

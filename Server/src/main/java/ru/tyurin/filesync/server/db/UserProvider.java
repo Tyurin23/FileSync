@@ -41,5 +41,9 @@ public class UserProvider {
 		return provider.save(user);
 	}
 
+	public void updateUser(UserEntity user) {
+		provider.update(user);
+	}
+
 
 }

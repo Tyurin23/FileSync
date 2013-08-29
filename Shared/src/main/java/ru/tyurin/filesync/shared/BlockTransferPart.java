@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 public class BlockTransferPart implements Serializable {
 
+	public static final int BLOCK_MAX_SIZE = 10;
 
 	private String path;
 	private byte[] data;

@@ -17,13 +17,13 @@ public class ConnectorTest {
 	final String HOST = "localhost";
 	final int PORT = 4444;
 	ClientSocketConnector clientConnector;
-	Connector serverConnector;
+	ServerSocketConnector serverConnector;
 
 	Server server;
 
 	class Server extends Thread {
 
-		Connector serverConnector;
+		ServerSocketConnector serverConnector;
 		SSLServerSocket serverSocket;
 
 		Server() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {

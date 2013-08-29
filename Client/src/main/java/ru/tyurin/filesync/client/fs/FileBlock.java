@@ -1,10 +1,12 @@
 package ru.tyurin.filesync.client.fs;
 
+import ru.tyurin.filesync.shared.BlockTransferPart;
+
 import java.io.Serializable;
 
 public class FileBlock implements Serializable {
 
-	public static final int BLOCK_SIZE = 10;
+	public static final int BLOCK_SIZE = BlockTransferPart.BLOCK_MAX_SIZE;
 
 	private int index;
 	private long hash;

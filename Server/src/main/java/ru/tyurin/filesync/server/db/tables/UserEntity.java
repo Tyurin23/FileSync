@@ -1,9 +1,11 @@
 package ru.tyurin.filesync.server.db.tables;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "fsync_user")
+@Table(name = "user")
 public class UserEntity {
 
 	@Id
@@ -16,6 +18,9 @@ public class UserEntity {
 
 	@Column(name = "password")
 	private String password;
+
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<FileEntity> files = new ArrayList<>();
 
 	public Integer getId() {
 		return id;
@@ -39,5 +44,27 @@ public class UserEntity {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public List<FileEntity> getFiles() {
+		return files;
+	}
+
+	public void setFiles(List<FileEntity> files) {
+		this.files = files;
+	}
+
+	public FileEntity getFile(String path) {
+		for (FileEntity file : getFiles()) {
+			if (file.getPath().equals(path)) {
+				return file;
+			}
+		}
+		return null;
+	}
+
+	public void addFile(FileEntity file) {
+		file.setUser(this);
+		getFiles().add(file);
 	}
 }

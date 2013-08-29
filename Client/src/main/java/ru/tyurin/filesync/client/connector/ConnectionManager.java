@@ -120,6 +120,20 @@ public class ConnectionManager {
 		return false;
 	}
 
+	public boolean sendFileInfo(FileNode file) throws Exception {
+		ClientSocketConnector connector = getAuthorizedConnector();
+		FileTransferPart transfer = new FileTransferPart();
+		transfer.setPath(file.getPath());
+		transfer.setHash(file.getHash());
+		transfer.setSize(file.getSpace());
+		if (connector.sendRequest(Request.UPDATE_FILE_INFO) == ConnectionStatus.OK) {
+			if (connector.sendObject(transfer) == ConnectionStatus.OK) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	protected ClientSocketConnector getAuthorizedConnector() throws Exception {
 		if (connector == null) {
 			connector = getConnector();

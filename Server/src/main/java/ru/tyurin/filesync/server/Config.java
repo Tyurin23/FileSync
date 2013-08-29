@@ -10,6 +10,7 @@ public class Config {
 	protected String host = "localhost";
 	protected int port = 4444;
 	protected boolean enableSSL = true;
+	private String dbType;
 	private String dbHost = "localhost";
 	private int dbPort = 5432;
 	private String dbName = "fsync";
@@ -113,5 +114,13 @@ public class Config {
 
 	public void setDbName(String dbName) {
 		this.dbName = dbName;
+	}
+
+	public String getDbType() {
+		return dbType;
+	}
+
+	public void setDbType(String dbType) {
+		this.dbType = dbType;
 	}
 }

@@ -4,6 +4,7 @@ import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import ru.tyurin.filesync.server.connector.facory.ConnectorFactory;
+import ru.tyurin.filesync.server.connector.facory.Factory;
 import ru.tyurin.filesync.server.connector.facory.SessionFactory;
 import ru.tyurin.filesync.server.connector.facory.SessionPoolFactory;
 import ru.tyurin.filesync.server.storage.BlockNode;
@@ -36,11 +37,12 @@ public class ConnectionManager extends Thread {
 
 	protected ServerSocket serverSocket;
 
+	protected Factory factory;
 	protected ConnectorFactory connectorFactory;
 	protected SessionFactory sessionFactory;
 	protected ServerSocketFactory socketFactory;
 
-	public static ConnectionManager getSSLInstance() throws Exception {
+	public static ServerSocketFactory getSSLServerSocketFactory() throws Exception {
 		KeyStore keyStore = KeyStore.getInstance("JKS");
 		keyStore.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -48,15 +50,15 @@ public class ConnectionManager extends Thread {
 		SSLContext sslContext = SSLContext.getInstance("TLS");
 		sslContext.init(kmf.getKeyManagers(), new TrustManager[]{}, null);
 		SSLServerSocketFactory factory = sslContext.getServerSocketFactory();
-		return new ConnectionManager(new ConnectorFactory(), new SessionFactory(), factory);
+		return factory;
 	}
 
-	public static ConnectionManager getDefaultInstance() throws Exception {
-		return new ConnectionManager(new ConnectorFactory(), new SessionFactory(), ServerSocketFactory.getDefault());
+	public static ServerSocketFactory getDefaultServerSocketFactory() throws Exception {
+		return ServerSocketFactory.getDefault();
 	}
 
 
-	protected ConnectionManager(ConnectorFactory connectorFactory, SessionFactory sessionFactory, ServerSocketFactory socketFactory) throws Exception {
+	public ConnectionManager(ConnectorFactory connectorFactory, SessionFactory sessionFactory, ServerSocketFactory socketFactory) throws Exception {
 		super("ServerConnectionManager");
 		LOG.debug("Creating connection manager...");
 		this.connectorFactory = connectorFactory;
@@ -66,10 +68,20 @@ public class ConnectionManager extends Thread {
 		dataQueue = new ArrayBlockingQueue<BlockNode>(DATA_QUEUE_CAPACITY);
 		GenericObjectPool.Config cfg = new GenericObjectPool.Config();
 		cfg.maxIdle = 5;
-		connectionPool = new GenericObjectPool<>(new SessionPoolFactory(dataQueue, sessionFactory), cfg);
+		connectionPool = new GenericObjectPool<>(new SessionPoolFactory(null), cfg);
 		serverSocket = socketFactory.createServerSocket(CONNECTION_PORT);
 		initPool();
 		LOG.debug("Connection Manager created");
+	}
+
+	public ConnectionManager(Factory factory) throws Exception {
+		super("ServerConnectionManager");
+		LOG.debug("Creating connection manager...");
+		sessionList = new ArrayList<>(POOL_INIT_OBJECTS_COUNT);
+		connectionPool = new GenericObjectPool<>(new SessionPoolFactory(factory));
+		serverSocket = factory.createServerSocket(CONNECTION_PORT);
+		this.factory = factory;
+		initPool();
 	}
 
 
@@ -99,15 +111,15 @@ public class ConnectionManager extends Thread {
 	}
 
 	protected void tick() throws Exception {
-		Connector connector = waitConnection();
+		ServerSocketConnector connector = waitConnection();
 		Session session = connectionPool.borrowObject();
 		session.setConnector(connector);
 		sessionList.add(session);
 		returnClosedSession();
 	}
 
-	protected Connector waitConnection() throws IOException {
-		return connectorFactory.createConnector(serverSocket.accept());
+	protected ServerSocketConnector waitConnection() throws IOException {
+		return factory.createConnector(serverSocket.accept());
 	}
 
 	protected void returnClosedSession() throws Exception {
@@ -117,10 +129,5 @@ public class ConnectionManager extends Thread {
 				sessionList.remove(session);
 			}
 		}
-	}
-
-	protected void log() {
-		LOG.debug("Active objects: " + connectionPool.getNumActive());
-		LOG.debug("Idle objects: " + connectionPool.getNumIdle());
 	}
 }

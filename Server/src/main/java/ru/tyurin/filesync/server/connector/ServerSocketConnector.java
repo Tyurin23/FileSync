@@ -1,6 +1,8 @@
 package ru.tyurin.filesync.server.connector;
 
 import org.apache.log4j.Logger;
+import ru.tyurin.filesync.shared.ConnectionStatus;
+import ru.tyurin.filesync.shared.Request;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -8,13 +10,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-public class ServerSocketConnector implements Connector {
+public class ServerSocketConnector {
 
 	public static Logger LOG = Logger.getLogger(ServerSocketConnector.class);
 
 	Socket socket;
 	ObjectInputStream input;
 	ObjectOutputStream output;
+	private Integer userID;
 
 	public ServerSocketConnector(Socket socket) throws IOException {
 		this.socket = socket;
@@ -24,11 +27,15 @@ public class ServerSocketConnector implements Connector {
 		LOG.debug("Connection created");
 	}
 
-	@Override
-	public void waitConnection() throws IOException {
+	public Request getRequest() throws IOException {
+		return (Request) getObject();
 	}
 
-	@Override
+	public void sendStatus(ConnectionStatus status) throws IOException {
+		sendObject(status);
+	}
+
+
 	public Object getObject() throws IOException {
 		Object obj = null;
 		try {
@@ -40,7 +47,6 @@ public class ServerSocketConnector implements Connector {
 		return obj;
 	}
 
-	@Override
 	public void sendObject(Object obj) throws IOException {
 		if (obj != null) {
 			output.writeObject(obj);
@@ -49,7 +55,6 @@ public class ServerSocketConnector implements Connector {
 		}
 	}
 
-	@Override
 	public void close() throws IOException {
 		input.close();
 		output.close();
@@ -57,8 +62,15 @@ public class ServerSocketConnector implements Connector {
 		LOG.debug("Connection close");
 	}
 
-	@Override
 	public boolean isClose() {
 		return socket.isClosed();
+	}
+
+	public Integer getUserID() {
+		return userID;
+	}
+
+	public void setUserID(Integer userID) {
+		this.userID = userID;
 	}
 }

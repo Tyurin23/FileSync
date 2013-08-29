@@ -19,22 +19,41 @@ import java.util.Map;
  */
 public class EntityProvider {
 
+	public static final String POSTGRESQL = "postgresql";
+	public static final String H2 = "h2";
+
 	private static EntityProvider provider;
 
 	private EntityManagerFactory emf;
 	private EntityManager em;
 
 	private static EntityProvider createPgSQLProvider(String dbHost, int dbPort, String dbName, String dbUser, String dbPassword) throws Exception {
-		return new EntityProvider(org.postgresql.Driver.class, dbHost, dbPort, dbName, dbUser, dbPassword);
+		String url = String.format("jdbc:postgresql://%s:%d/%s", dbHost, dbPort, dbName);
+		return new EntityProvider(POSTGRESQL, url, dbUser, dbPassword);
 	}
 
-	private EntityProvider(Class driver, String dbHost, int dbPort, String dbName, String dbUser, String dbPassword) throws Exception {
-		emf = getEntityManagerFactory(driver, dbHost, dbPort, dbName, dbUser, dbPassword);
+	private static EntityProvider createH2Provider(String path, String dbUser, String dbPassword) throws Exception {
+		String url = String.format("jdbc:h2:%s", path);
+		return new EntityProvider(H2, url, dbUser, dbPassword);
+	}
+
+	private EntityProvider(String dbType, String url, String dbUser, String dbPassword) throws Exception {
+		emf = getEntityManagerFactory(dbType, url, dbUser, dbPassword);
 		em = emf.createEntityManager();
 	}
 
-	public static EntityProvider createInstance(String dbHost, int dbPort, String dbName, String dbUser, String dbPassword) throws Exception {
-		return provider = createPgSQLProvider(dbHost, dbPort, dbName, dbUser, dbPassword);
+	public static EntityProvider createInstance(String db, String dbHost, int dbPort, String dbName, String dbUser, String dbPassword) throws Exception {
+		switch (db) {
+			case POSTGRESQL:
+				provider = createPgSQLProvider(dbHost, dbPort, dbName, dbUser, dbPassword);
+				break;
+			case H2:
+				provider = createH2Provider(dbName, dbUser, dbPassword);
+				break;
+			default:
+				throw new Exception(String.format("Database %s not supported", db));
+		}
+		return provider;
 	}
 
 	public static EntityProvider getInstance() {
@@ -45,6 +64,14 @@ public class EntityProvider {
 		EntityTransaction tx = em.getTransaction();
 		tx.begin();
 		em.persist(entity);
+		tx.commit();
+		return entity;
+	}
+
+	public <E> E update(E entity) {
+		EntityTransaction tx = em.getTransaction();
+		tx.begin();
+		entity = em.merge(entity);
 		tx.commit();
 		return entity;
 	}
@@ -67,21 +94,19 @@ public class EntityProvider {
 		provider = null;
 	}
 
-	private EntityManagerFactory getEntityManagerFactory(Class driver, String dbHost, int dbPort, String dbName, String dbUser, String dbPassword) throws Exception {
+	private EntityManagerFactory getEntityManagerFactory(String dbType, String url, String dbUser, String dbPassword) throws Exception {
 		Map<String, String> prop = new HashMap<>();
-		DriverManager.setLoginTimeout(3);
-		prop.put("javax.persistence.jdbc.driver", driver.getCanonicalName());
-		prop.put("javax.persistence.jdbc.url", String.format("jdbc:postgresql://%s:%d/%s", dbHost, dbPort, dbName));
+		prop.put("javax.persistence.jdbc.url", url);
 		prop.put("javax.persistence.jdbc.user", dbUser);
 		prop.put("javax.persistence.jdbc.password", dbPassword);
-		prop.put("javax.persistence.lock.timeout", "2000");
-		prop.put("javax.persistence.query.timeout", "1000");
+		DriverManager.setLoginTimeout(3);
 		EntityManagerFactory factory = null;
 		try {
-			factory = Persistence.createEntityManagerFactory("FSync", prop);
+			factory = Persistence.createEntityManagerFactory(dbType, prop);
 		} catch (JDBCConnectionException e) {
 			throw new Exception(e.getMessage(), e);
 		}
 		return factory;
 	}
+
 }

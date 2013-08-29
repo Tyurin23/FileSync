@@ -24,8 +24,8 @@ public class ConnectionManagerTest {
 
 	@BeforeMethod
 	public void setUpMethod() throws Exception {
-		serverManager = ConnectionManager.getSSLInstance();
-		serverManager.start();
+//		serverManager = new ConnectionManager(new Factory())
+//		serverManager.start();
 
 	}
 

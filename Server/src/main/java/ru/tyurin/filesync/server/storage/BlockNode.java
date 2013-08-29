@@ -1,8 +1,10 @@
 package ru.tyurin.filesync.server.storage;
 
-import ru.tyurin.filesync.client.fs.FileBlock;
+
+import ru.tyurin.filesync.shared.BlockTransferPart;
 
 import java.util.Date;
+import java.util.zip.CRC32;
 
 /**
  * User: tyurin
@@ -11,7 +13,7 @@ import java.util.Date;
  */
 public class BlockNode {
 
-	public static final int BLOCK_SIZE = FileBlock.BLOCK_SIZE;
+	public static final int BLOCK_SIZE = BlockTransferPart.BLOCK_MAX_SIZE;
 
 	private String id;
 	private int userId;
@@ -66,6 +68,11 @@ public class BlockNode {
 
 	public void setData(byte[] data) {
 		this.data = data;
+		CRC32 crc = new CRC32();
+		crc.update(data);
+		setHash(crc.getValue());
+
+		setSize(data.length);
 	}
 
 	public long getHash() {

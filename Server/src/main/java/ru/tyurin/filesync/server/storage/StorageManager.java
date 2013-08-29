@@ -13,22 +13,18 @@ import java.nio.file.Paths;
  * Date: 8/6/13
  * Time: 8:40 AM
  */
-public class StorageManager extends Thread {
+public class StorageManager {
 
 	public static final Logger LOG = Logger.getLogger(StorageManager.class);
-
-
 	private Path rootDirectory;
 
 
 	public StorageManager(String rootDirectory) throws IOException {
-		super("StorageManager");
-		LOG.debug("Creating Storage Manager...");
 		setRootDirectory(Paths.get(rootDirectory));
 		LOG.debug("Storage Manager created");
 	}
 
-	public synchronized void saveBlock(BlockNode node) throws IOException {
+	public void saveBlock(BlockNode node) throws IOException {
 		Path path = rootDirectory.resolve(String.valueOf(node.getUserId())).resolve(node.getPath());
 		if (!Files.exists(path)) {
 			Files.createDirectories(path.getParent());
@@ -41,21 +37,6 @@ public class StorageManager extends Thread {
 		access.close();
 	}
 
-
-	@Override
-	public void run() {
-		LOG.debug("Starting Storage Manager");
-		while (!interrupted()) {
-			synchronized (this) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					interrupt();
-				}
-			}
-		}
-		LOG.debug("Storage Manager stopped");
-	}
 
 	protected void setRootDirectory(Path rootDirectory) throws IOException {
 		if (rootDirectory == null) {

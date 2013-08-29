@@ -11,18 +11,18 @@ public class SessionPoolFactory extends BasePoolableObjectFactory<Session> {
 
 	public static Logger LOG = Logger.getLogger(SessionPoolFactory.class);
 
-	private SessionFactory factory;
+	private Factory factory;
 	private Queue<BlockNode> dataQueue;
 	private int count = 0;
 
-	public SessionPoolFactory(Queue<BlockNode> dataQueue, SessionFactory factory) {
+	public SessionPoolFactory(Factory factory) {
 		this.factory = factory;
-		this.dataQueue = dataQueue;
 	}
 
 	@Override
 	public Session makeObject() throws Exception {
-		Session s = new Session(this.dataQueue, count);
+		Session s = factory.createSession();
+		s.identifier = String.valueOf(count);
 		count++;
 		s.start();
 		return s;

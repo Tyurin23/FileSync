@@ -7,13 +7,17 @@ import ru.tyurin.filecreator.State;
 import ru.tyurin.filesync.client.FileSyncClient;
 import ru.tyurin.filesync.client.fs.FSStorage;
 import ru.tyurin.filesync.client.util.Settings;
+import ru.tyurin.filesync.server.db.EntityProvider;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 
 /**
  * User: tyurin
@@ -22,7 +26,9 @@ import static org.testng.Assert.fail;
  */
 public class FileSyncServerTest {
 
-	private final Object monitor = new Object();
+	final String DB_NAME = "db1";
+	final String USER_NAME = "test";
+	final String PASSWORD = "test";
 
 	final String clientSyncDirectory = "/home/tyurin/tmp/FS/client";
 	final String serverStorageDirectory = "/home/tyurin/tmp/FS/server/storage";
@@ -38,16 +44,24 @@ public class FileSyncServerTest {
 
 	FileSyncClient client;
 
+	Connection connection;
+
 
 	@BeforeClass
 	public void setUp() throws Exception {
+		connection = DriverManager.getConnection(String.format("jdbc:h2:mem:%s", DB_NAME), "sa", "sa");
+
 		cfg = Config.getDefaultConfig();
 		cfg.setStorageDirectory(serverStorageDirectory);
+		cfg.setDbType("h2");
+		cfg.setDbName("mem:" + DB_NAME);
+		cfg.setDbUser("sa");
+		cfg.setDbPassword("sa");
 
 		settings = Settings.getDefaultSettings();
 		settings.setDisableUI(true);
-		settings.setLogin("test");
-		settings.setPassword("test");
+		settings.setLogin(USER_NAME);
+		settings.setPassword(PASSWORD);
 		settings.setSyncDirectory(clientSyncDirectory);
 
 	}
@@ -59,6 +73,12 @@ public class FileSyncServerTest {
 		Files.deleteIfExists(Paths.get(settings.getProgramPath() + FSStorage.FILENAME));
 
 		server = new FileSyncServer(cfg);
+		server.start();
+		Thread.sleep(100);
+
+		createUser(USER_NAME, PASSWORD);
+
+
 		client = new FileSyncClient(settings);
 	}
 
@@ -66,6 +86,9 @@ public class FileSyncServerTest {
 	public void tearDownMethod() throws Exception {
 		client.interrupt();
 		server.interrupt();
+		EntityProvider.close();
+
+		connection.createStatement().execute("DROP ALL OBJECTS");
 
 //		FileUtils.cleanDirectory(new File(clientSyncDirectory));
 //		FileUtils.cleanDirectory(new File(serverStorageDirectory));
@@ -74,15 +97,15 @@ public class FileSyncServerTest {
 
 	@AfterClass
 	public void tearDown() throws Exception {
-
+		connection.close();
 	}
 
-	@Test
-	public void testFSServer() throws Exception {
 
+	@Test(
+			timeOut = 10000L
+	)
+	public void testCreate() throws Exception {
 
-		server.start();
-		Thread.sleep(1000);
 		client.start();
 		Thread.sleep(1000);
 
@@ -92,22 +115,28 @@ public class FileSyncServerTest {
 		System.out.println("Files created - " + state.getExistingFiles().size());
 		Thread.sleep(5000);
 
-		long time = System.currentTimeMillis();
-		final long timeout = 10000;
-		while (client.status != 0) {
-			if (System.currentTimeMillis() - time > timeout) {
-				fail("timeout");
-			}
-		}
 		State serverState = new State(new File(serverStorageDirectory));
 		long cliHash = state.getHash();
 		long srvHash = serverState.getHash();
 		System.out.println(srvHash + " = " + cliHash);
-//		assertTrue(state.getExistingFiles().equals(serverState.getExistingFiles()));
-//		synchronized (monitor) {
-//			monitor.wait();
-//		}
 		assertEquals(cliHash, srvHash);
+	}
 
+	@Test(
+			dependsOnMethods = "testCreate",
+			enabled = false
+
+	)
+	public void testModify() throws Exception {
+
+
+	}
+
+	private boolean createUser(String login, String password) throws SQLException {
+		PreparedStatement ps = connection.prepareStatement("insert into user values (default, ?, ?)");
+		ps.setString(1, login);
+		ps.setString(2, password);
+		int res = ps.executeUpdate();
+		return (res > 0);
 	}
 }
