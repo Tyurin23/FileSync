@@ -7,7 +7,8 @@ public enum FileStatus implements Serializable {
 
 	DELETED,
 	NEW,
-	MODIFIED,
+	MODIFIED_SERVER_PRIORITY,
+	MODIFIED_CLIENT_PRIORITY,
 	NORMAL,
 	BAD
 }

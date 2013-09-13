@@ -21,7 +21,6 @@ public class FSTest {
 	public static final String path = "/home/tyurin/tmp/testSync/";
 	Path basicDir;
 
-	Queue<BlockTransferPart> input;
 
 	FSContainer container;
 
@@ -42,18 +41,11 @@ public class FSTest {
 	public void setUpMethod() throws Exception {
 		storage = new FSStorage(Settings.getDefaultSettings().getProgramPath());
 		container = storage.getContainer();
-		input = new ArrayBlockingQueue<BlockTransferPart>(100);
-		manager = new FSManager(basicDir.toString(), container, input);
-		manager.start();
+		manager = new FSManager(basicDir.toString(), container);
 	}
 
 	@AfterMethod
 	public void tearDownMethod() throws Exception {
-		manager.interrupt();
-		while (manager.getState() != Thread.State.TERMINATED) {
-			Thread.sleep(100);
-			System.out.println("Sleep");
-		}
 		Files.deleteIfExists(storage.getStorageFile().toPath());
 		FileUtils.cleanDirectory(basicDir.toFile());
 	}

@@ -28,7 +28,9 @@ public class ServerSocketConnector {
 	}
 
 	public Request getRequest() throws IOException {
-		return (Request) getObject();
+		Request req = (Request) getObject();
+		LOG.debug("Request " + req);
+		return req;
 	}
 
 	public void sendStatus(ConnectionStatus status) throws IOException {

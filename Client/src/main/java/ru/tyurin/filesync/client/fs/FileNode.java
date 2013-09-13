@@ -2,32 +2,31 @@ package ru.tyurin.filesync.client.fs;
 
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
-public class FileNode implements Serializable {
+public class FileNode implements Serializable, Comparable<FileNode> {
 
 	private String path;
 	private String absolutePath;
 	private long space;
 	private long hash;
 	private FileStatus status = FileStatus.NEW;
-	private Map<Integer, FileBlock> blocks = new HashMap<>();
+	private Map<Integer, BlockNode> blocks = new HashMap<>();
+	private Date modifiedDate;
 
 
-	public FileNode(Path path, long space, long hash, List<FileBlock> blocks) {
-		this.path = path.toFile().toString();
+	public FileNode(String path, long space, long hash, Collection<BlockNode> blocks) {
+		this.path = path;
 		this.space = space;
 		this.hash = hash;
-		for (FileBlock block : blocks) {
+		for (BlockNode block : blocks) {
 			this.blocks.put(block.getIndex(), block);
 		}
 	}
 
-	public FileNode(Path path, Path absolutePath, long space, long hash, List<FileBlock> blocks) {
-		this(path, space, hash, blocks);
+	public FileNode(Path path, Path absolutePath, long space, long hash, Collection<BlockNode> blocks) {
+		this(path.toString(), space, hash, blocks);
 		this.absolutePath = absolutePath.toString();
 	}
 
@@ -55,12 +54,13 @@ public class FileNode implements Serializable {
 		this.hash = hash;
 	}
 
-	public Map<Integer, FileBlock> getBlocks() {
+	public Map<Integer, BlockNode> getBlocks() {
 		return blocks;
 	}
 
-	public void setBlocks(Map<Integer, FileBlock> blocks) {
-		this.blocks = blocks;
+	public void addBlock(BlockNode block) {
+		block.setNode(this);
+		this.blocks.put(block.getIndex(), block);
 	}
 
 	public FileStatus getStatus() {
@@ -70,6 +70,42 @@ public class FileNode implements Serializable {
 	public void setStatus(FileStatus status) {
 		this.status = status;
 	}
+
+	public Date getModifiedDate() {
+		return modifiedDate;
+	}
+
+	public void setModifiedDate(Date modifiedDate) {
+		this.modifiedDate = modifiedDate;
+	}
+
+	public boolean isDeleted(){
+		return (getStatus() == FileStatus.DELETED);
+	}
+
+	public boolean isBad(){
+		return (getStatus() == FileStatus.BAD);
+	}
+
+	public FileStatus compare(FileNode other){
+		if(other == null){
+			throw  new NullPointerException();
+		}
+		if(isDeleted()){
+			return FileStatus.DELETED;
+		}
+		int status = getModifiedDate().compareTo(other.getModifiedDate());
+		if(status == 0){
+			return FileStatus.NORMAL;
+		}else if(status < 0){
+			return FileStatus.MODIFIED_SERVER_PRIORITY;
+		}else if(status > 0){
+			return FileStatus.MODIFIED_CLIENT_PRIORITY;
+		}
+		return FileStatus.BAD;
+	}
+
+
 
 	@Override
 	public boolean equals(Object obj) {
@@ -88,5 +124,10 @@ public class FileNode implements Serializable {
 	@Override
 	public String toString() {
 		return String.format("%s: (%d, %d, %d)[%s]", getPath(), getSpace(), getHash(), (getBlocks() != null ? getBlocks().size() : 0), getStatus());
+	}
+
+	@Override
+	public int compareTo(FileNode o) {
+		return path.compareTo(o.path);
 	}
 }

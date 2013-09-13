@@ -89,9 +89,10 @@ public class EntityProvider {
 	}
 
 	public static void close() {
-		getInstance().em.close();
-		getInstance().emf.close();
+		provider.em.close();
+//		provider.emf.close();
 		provider = null;
+		System.out.println("provider close");
 	}
 
 	private EntityManagerFactory getEntityManagerFactory(String dbType, String url, String dbUser, String dbPassword) throws Exception {

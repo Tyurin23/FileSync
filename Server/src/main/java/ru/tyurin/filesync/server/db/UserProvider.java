@@ -23,7 +23,11 @@ public class UserProvider {
 	}
 
 	public UserEntity findById(int id) {
-		return provider.findById(UserEntity.class, id);
+//		return provider.findById(UserEntity.class, id);
+		Session session = provider.getSession();
+		Criteria criteria = session.createCriteria(UserEntity.class);
+		criteria.add(Restrictions.eq("id", id));
+		return (UserEntity) criteria.uniqueResult();
 	}
 
 	public UserEntity findByLoginAndPassword(String login, String password) {
@@ -42,7 +46,7 @@ public class UserProvider {
 	}
 
 	public void updateUser(UserEntity user) {
-		provider.update(user);
+		provider.save(user);
 	}
 
 

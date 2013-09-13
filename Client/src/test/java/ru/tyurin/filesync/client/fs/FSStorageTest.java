@@ -72,8 +72,8 @@ public class FSStorageTest extends FSStorage {
 		return new Object[][]{
 				new Object[]{
 						Arrays.asList(new FileNode[]{
-								new FileNode(Paths.get("path"), 10, 10, null),
-								new FileNode(Paths.get("p"), 100, 100, new ArrayList<FileBlock>())
+								new FileNode("path", 10, 10, null),
+								new FileNode("p", 100, 100, new ArrayList<BlockNode>())
 						})
 				}
 		};

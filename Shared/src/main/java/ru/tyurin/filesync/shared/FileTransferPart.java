@@ -36,4 +36,9 @@ public class FileTransferPart implements Serializable {
 	public void setHash(long hash) {
 		this.hash = hash;
 	}
+
+	public int getBlocksCount(){
+		int size = (int) this.size;
+		return size / BlockTransferPart.BLOCK_MAX_SIZE + (size % BlockTransferPart.BLOCK_MAX_SIZE > 0 ? 1 : 0);
+	}
 }

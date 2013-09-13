@@ -15,7 +15,6 @@ public class FileSyncUI {
 
 	public FileSyncUI() {
 		this.model = new UIModel();
-
 		this.view = new UIView(this.model);
 		this.controller = new UIController(this.model, view);
 	}

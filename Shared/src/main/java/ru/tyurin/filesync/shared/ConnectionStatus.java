@@ -10,5 +10,7 @@ import java.io.Serializable;
 public enum ConnectionStatus implements Serializable {
 	OK,
 	ERROR,
-	AUTHENTICATION_ERROR
+	AUTHENTICATION_ERROR,
+	REQUEST_ERROR,
+	NO_SUCH_FILE_ERROR
 }

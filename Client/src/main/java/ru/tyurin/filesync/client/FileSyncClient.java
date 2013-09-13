@@ -6,18 +6,19 @@ import ru.tyurin.filesync.client.UI.FileSyncUI;
 import ru.tyurin.filesync.client.connector.ConnectionManager;
 import ru.tyurin.filesync.client.fs.*;
 import ru.tyurin.filesync.client.util.Settings;
-import ru.tyurin.filesync.shared.BlockTransferPart;
+
 
 import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.nio.ByteBuffer;
+import java.nio.file.Path;
+
 
 //todo exception handler
 public class FileSyncClient extends Thread {
 
 	public static Logger LOG = Logger.getLogger(FileSyncClient.class);
 
-	protected final int QUEUE_CAPACITY = 10;
+
 	protected final int DELAY = 3000;
 	public static int status = -1;
 
@@ -28,7 +29,6 @@ public class FileSyncClient extends Thread {
 	protected FSContainer container;
 	protected FSStorage storage;
 	protected FileSyncUI ui;
-	protected Queue<BlockTransferPart> inputParts = new ArrayBlockingQueue<BlockTransferPart>(QUEUE_CAPACITY);
 
 	public static FileSyncClient loadClient() throws Exception {
 		Settings settings;
@@ -82,7 +82,7 @@ public class FileSyncClient extends Thread {
 		storage = new FSStorage(settings.getProgramPath());
 		container = storage.getContainer();
 
-		fsManager = new FSManager(settings.getSyncDirectory(), container, inputParts);
+		fsManager = new FSManager(settings.getSyncDirectory(), container);
 
 		connectionManager = ConnectionManager.createSSLInstance();//todo
 		connectionManager.setLogin(settings.getLogin());
@@ -94,27 +94,32 @@ public class FileSyncClient extends Thread {
 	@Override
 	public void run() {
 		LOG.debug("Running client");
-		fsManager.start();
 		while (!interrupted()) {
-			try {
-				if (connectionManager.testAuthorization()) {
-					for (FileNode node : container.getCollection()) {
-						if (node.getStatus() == FileStatus.NEW || node.getStatus() == FileStatus.MODIFIED) {
-							status = 1;
-							try {
-								sendModifiedBlock(node);
-							} catch (Exception e) {
-								e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-								interrupt();
-							}
-						}
-					}
-				} else {
-					Thread.sleep(3000);
-					continue;
-				}
+//			try {
+//				if (connectionManager.testAuthorization()) {
+//					for (FileNode node : container.getCollection()) {
+//						if (node.getStatus() == FileStatus.NEW || node.getStatus() == FileStatus.MODIFIED_CLIENT_PRIORITY) {
+//							status = 1;
+//							try {
+//								sendModifiedBlock(node);
+//							} catch (Exception e) {
+//								e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//								interrupt();
+//							}
+//						}
+//					}
+//				} else {
+//					Thread.sleep(3000);
+//					continue;
+//				}
+//
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
 
-			} catch (Exception e) {
+			try {
+				synchronize(fsManager.getFileSystem(), connectionManager.getFileSystem());
+			}catch (Exception e){
 				e.printStackTrace();
 			}
 
@@ -127,31 +132,65 @@ public class FileSyncClient extends Thread {
 			}
 
 		}
-		fsManager.interrupt();
 		LOG.debug("Client stopped");
 	}
 
-	protected void sendModifiedBlock(FileNode node) throws Exception {
-		boolean isSend = false;
-		for (FileBlock block : node.getBlocks().values()) {
-			if (!block.isSync()) {
-				if (block.isDeleted()) {
-					isSend = connectionManager.sendBlock(node, block, new byte[0]);
-				} else {
-					isSend = connectionManager.sendBlock(node, block, FSUtils.getBlockData(node, block));
-				}
-			}
-			if (isSend) {
-				block.setSync(true);
+	private void synchronize(VFS local, VFS remote) throws Exception {
+		if(local.isEquals(remote)){
+			System.out.println("Equals");
+			return;
+		}
+		for(FileNode file : local.getFiles()){
+			FileNode remoteFile = remote.getFile(file.getPath());
+			if(remoteFile == null){
+				synchronizeFile(local, remote, file);
+			}else if(file.compare(remoteFile) == FileStatus.MODIFIED_CLIENT_PRIORITY){
+				synchronizeFile(local, remote, file);
+			}else if(file.compare(remoteFile) == FileStatus.MODIFIED_SERVER_PRIORITY){
+				synchronizeFile(remote, local, remoteFile);
+			}else if(file.compare(remoteFile) == FileStatus.DELETED){
+				remote.removeFile(file);
 			}
 		}
-		node.setStatus(FileStatus.NORMAL);
-		for (FileBlock block : node.getBlocks().values()) {
-			if (!block.isSync()) {
-				node.setStatus(FileStatus.MODIFIED);
+
+
+	}
+
+	private void synchronizeFile(VFS in, VFS out, FileNode file) throws Exception {
+		for(BlockNode block : in.getBlocks(file)){
+			BlockNode remoteBlock = out.getBlock(file, block.getIndex());
+			if(remoteBlock == null || !block.equals(remoteBlock)){
+				synchronizeBlock(in, out, file, block);
 			}
 		}
 	}
+
+	private void synchronizeBlock(VFS in, VFS out, FileNode file, BlockNode block) throws Exception {
+		ByteBuffer buffer = in.getBlockData(file, block);
+		out.writeBlockData(file, block, buffer);
+	}
+
+//	protected void sendModifiedBlock(FileNode node) throws Exception {
+//		boolean isSend = false;
+//		for (BlockNode block : node.getBlocks().values()) {
+//			if (!block.isSync()) {
+//				if (block.isDeleted()) {
+//					isSend = connectionManager.sendBlock(node, block, new byte[0]);
+//				} else {
+//					isSend = connectionManager.sendBlock(node, block, FSUtils.getBlockData(node, block));
+//				}
+//			}
+//			if (isSend) {
+//				block.setSync(true);
+//			}
+//		}
+//		node.setStatus(FileStatus.NORMAL);
+//		for (BlockNode block : node.getBlocks().values()) {
+//			if (!block.isSync()) {
+//				node.setStatus(FileStatus.MODIFIED_CLIENT_PRIORITY);
+//			}
+//		}
+//	}
 
 	public static void main(String[] args) {
 
@@ -166,6 +205,18 @@ public class FileSyncClient extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void stopClient(){
+		interrupt();
+		synchronized (this){
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				this.notifyAll();
+			}
+		}
+		LOG.debug("Client stopped!!!!!");
 	}
 
 }

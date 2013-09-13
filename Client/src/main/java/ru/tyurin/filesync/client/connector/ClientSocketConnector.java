@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.*;
 
 
 public class ClientSocketConnector {
@@ -45,16 +46,28 @@ public class ClientSocketConnector {
 
 
 	public Object receiveObject() throws IOException {
+		Callable<Object> task = new Callable<Object>() {
+			@Override
+			public Object call() throws Exception {
+				return input.readObject();
+			}
+		};
+		ExecutorService executor = Executors.newCachedThreadPool();
+		Future<Object> future = executor.submit(task);
 		Object obj = null;
 		try {
-			obj = input.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			obj = future.get(2, TimeUnit.SECONDS);
+		} catch (InterruptedException | TimeoutException e) {
 			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IOException(e);
 		}
 		LOG.debug(String.format("Object %s read", obj));
 		return obj;
 	}
+
+
 
 	public ConnectionStatus sendRequest(Request request) throws IOException {
 		if (request == null) {
@@ -67,10 +80,27 @@ public class ClientSocketConnector {
 		return socket.isClosed();
 	}
 
-	private void sendObj(Object obj) throws IOException {
+	private void sendObj(final Object obj) throws IOException {
 		if (obj != null) {
-			output.writeObject(obj);
-			output.flush();
+			Callable<Object> task = new Callable<Object>() {
+				@Override
+				public Object call() throws Exception {
+					output.writeObject(obj);
+					output.flush();
+					return null;
+				}
+			};
+			ExecutorService executor = Executors.newCachedThreadPool();
+			Future<Object> future = executor.submit(task);
+			try {
+				future.get(2, TimeUnit.SECONDS);
+			} catch (InterruptedException | TimeoutException e) {
+				e.printStackTrace();
+				return;
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new IOException(e);
+			}
 			LOG.debug(String.format("Object %s sent", obj));
 		}
 	}

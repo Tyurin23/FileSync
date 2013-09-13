@@ -9,10 +9,14 @@ import java.io.Serializable;
  */
 public enum Request implements Serializable {
 	GET_FILE_NODES,
-	AUTH,
+	GET_FILE,
+	SEND_FILE,
+	GET_BLOCK_NODES,
 	GET_BLOCK,
-	SAVE_BLOCK,
-	UPDATE_FILE_INFO,
-	REGISTRATION
-
+	GET_BLOCK_DATA,
+	SEND_BLOCK_DATA,
+	REMOVE_FILE,
+	AUTH,
+	REGISTRATION,
+	GET_FILESYSTEM_CHECKSUM
 }

@@ -6,7 +6,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "file")
-public class FileEntity {
+public class FileEntity implements Comparable<FileEntity> {
 
 	@Id
 	@Column(name = "id")
@@ -89,5 +89,10 @@ public class FileEntity {
 
 	public void setUser(UserEntity user) {
 		this.user = user;
+	}
+
+	@Override
+	public int compareTo(FileEntity o) {
+		return path.compareTo(o.path);
 	}
 }

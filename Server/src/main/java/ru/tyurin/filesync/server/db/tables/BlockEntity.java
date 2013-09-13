@@ -1,5 +1,7 @@
 package ru.tyurin.filesync.server.db.tables;
 
+import ru.tyurin.filesync.server.storage.BlockNode;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -74,5 +76,13 @@ public class BlockEntity {
 
 	public void setFile(FileEntity file) {
 		this.file = file;
+	}
+
+	public BlockNode getBlockNode(){
+		BlockNode node = new BlockNode(getFile().getPath(), getIndex(), getFile().getUser().getId());
+		node.setSize(getSize());
+		node.setHash(getHash());
+		node.setDateModified(getDateModified());
+		return node;
 	}
 }

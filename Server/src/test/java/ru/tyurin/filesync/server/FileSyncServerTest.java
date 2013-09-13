@@ -26,15 +26,14 @@ import static org.testng.Assert.assertEquals;
  */
 public class FileSyncServerTest {
 
-	final String DB_NAME = "db1";
+	static final String DB_NAME = "db1";
 	final String USER_NAME = "test";
 	final String PASSWORD = "test";
 
 	final String clientSyncDirectory = "/home/tyurin/tmp/FS/client";
 	final String serverStorageDirectory = "/home/tyurin/tmp/FS/server/storage";
+	final String OTHER_CLIENT_SYNC_PATH = "/home/tyurin/tmp/FS/otherClient";
 	final String serverProgramDirectory = "/home/tyurin/tmp/FS/server/FSServer";
-
-	State state;
 
 	Config cfg;
 
@@ -44,17 +43,25 @@ public class FileSyncServerTest {
 
 	FileSyncClient client;
 
-	Connection connection;
+
+
+	static Connection connection;
 
 
 	@BeforeClass
-	public void setUp() throws Exception {
-		connection = DriverManager.getConnection(String.format("jdbc:h2:mem:%s", DB_NAME), "sa", "sa");
+	public static void setUp() throws Exception {
+
+	}
+
+	@BeforeMethod
+	public void setUpMethod() throws Exception {
+		connection = DriverManager.getConnection(String.format("jdbc:h2:mem"), "sa", "sa");
+		connection.createStatement().execute("DROP ALL OBJECTS");
 
 		cfg = Config.getDefaultConfig();
 		cfg.setStorageDirectory(serverStorageDirectory);
 		cfg.setDbType("h2");
-		cfg.setDbName("mem:" + DB_NAME);
+		cfg.setDbName("mem");
 		cfg.setDbUser("sa");
 		cfg.setDbPassword("sa");
 
@@ -64,17 +71,12 @@ public class FileSyncServerTest {
 		settings.setPassword(PASSWORD);
 		settings.setSyncDirectory(clientSyncDirectory);
 
-	}
-
-	@BeforeMethod
-	public void setUpMethod() throws Exception {
 		FileUtils.cleanDirectory(new File(clientSyncDirectory));
 		FileUtils.cleanDirectory(new File(serverStorageDirectory));
+		FileUtils.cleanDirectory(new File(OTHER_CLIENT_SYNC_PATH));
 		Files.deleteIfExists(Paths.get(settings.getProgramPath() + FSStorage.FILENAME));
 
 		server = new FileSyncServer(cfg);
-		server.start();
-		Thread.sleep(100);
 
 		createUser(USER_NAME, PASSWORD);
 
@@ -84,32 +86,51 @@ public class FileSyncServerTest {
 
 	@AfterMethod
 	public void tearDownMethod() throws Exception {
-		client.interrupt();
-		server.interrupt();
-		EntityProvider.close();
+		client.stopClient();
+		Thread.sleep(1000);
 
-		connection.createStatement().execute("DROP ALL OBJECTS");
+		server.stop();
 
-//		FileUtils.cleanDirectory(new File(clientSyncDirectory));
-//		FileUtils.cleanDirectory(new File(serverStorageDirectory));
-		Files.deleteIfExists(Paths.get(settings.getProgramPath() + FSStorage.FILENAME));
+		connection.close();
+
 	}
 
 	@AfterClass
-	public void tearDown() throws Exception {
+	public static void tearDown() throws Exception {
 		connection.close();
+		EntityProvider.close();
 	}
 
 
 	@Test(
-			timeOut = 10000L
+			enabled = false
+	)
+	public void testConnectingTwoClients() throws Exception {
+		client.start();
+
+		Settings s = Settings.getDefaultSettings();
+		s.setDisableUI(true);
+		s.setLogin(USER_NAME);
+		s.setPassword(PASSWORD);
+		s.setSyncDirectory(OTHER_CLIENT_SYNC_PATH);
+//		FileSyncClient otherClient = new FileSyncClient(s);
+//		otherClient.start();
+//		Thread.sleep(15000);\
+
+		synchronized (this){
+			this.wait();
+		}
+	}
+
+
+	@Test(
+			timeOut = 10000L,
+			enabled = true
 	)
 	public void testCreate() throws Exception {
 
 		client.start();
-		Thread.sleep(1000);
-
-		state = new FileCreator.Builder(new File(settings.getSyncDirectory())).maxDepth(0).maxFiles(3).maxFileSize(100).dirProbability(0.0).build().createTree();
+		State state = new FileCreator.Builder(new File(settings.getSyncDirectory())).maxDepth(0).maxFiles(3).maxFileSize(100).dirProbability(0.0).build().createTree();
 
 
 		System.out.println("Files created - " + state.getExistingFiles().size());
@@ -123,12 +144,39 @@ public class FileSyncServerTest {
 	}
 
 	@Test(
-			dependsOnMethods = "testCreate",
-			enabled = false
+//			dependsOnMethods = "testCreate",
+			enabled = true
 
 	)
 	public void testModify() throws Exception {
+		client.start();
+		State state = new FileCreator.Builder(new File(settings.getSyncDirectory())).maxDepth(0).maxFiles(2).maxFileSize(100).dirProbability(0.0).build().createTree();
+		System.out.println("Files created - " + state.getExistingFiles().size());
+		Thread.sleep(10000);
+//		client.interrupt();
 
+		State serverState = new State(new File(serverStorageDirectory));
+		long clHash = state.getHash();
+		long srvHash = serverState.getHash();
+		System.out.println(srvHash + " = " + clHash);
+		assertEquals(clHash, srvHash);
+
+
+		Settings s = Settings.getDefaultSettings();
+		s.setDisableUI(true);
+		s.setLogin(USER_NAME);
+		s.setPassword(PASSWORD);
+		s.setSyncDirectory(OTHER_CLIENT_SYNC_PATH);
+		FileSyncClient otherClient = new FileSyncClient(s);
+
+		otherClient.start();
+		Thread.sleep(15000);
+//
+//		State otherClientState = new State(new File(OTHER_CLIENT_SYNC_PATH));
+//		long cliHash = state.getHash();
+//		long oCliHash = otherClientState.getHash();
+//		System.out.println(oCliHash + " = " + cliHash);
+//		assertEquals(cliHash, oCliHash);
 
 	}
 

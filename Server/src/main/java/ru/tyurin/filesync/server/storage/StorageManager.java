@@ -2,6 +2,7 @@ package ru.tyurin.filesync.server.storage;
 
 import org.apache.log4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -34,6 +35,15 @@ public class StorageManager {
 
 		access.seek(node.getIndex() * BlockNode.BLOCK_SIZE);
 		access.write(node.getData());
+		access.close();
+	}
+
+	public void loadBlock(BlockNode node) throws IOException {
+		Path path = rootDirectory.resolve(String.valueOf(node.getUserId())).resolve(node.getPath());
+		RandomAccessFile access = new RandomAccessFile(path.toFile(), "r");
+		access.seek(node.getIndex() * BlockNode.BLOCK_SIZE);
+		byte b[] = new byte[(int) node.getSize()];
+		access.read(b);
 		access.close();
 	}
 

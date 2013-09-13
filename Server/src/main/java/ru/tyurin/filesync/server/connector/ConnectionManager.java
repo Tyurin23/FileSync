@@ -3,11 +3,8 @@ package ru.tyurin.filesync.server.connector;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
-import ru.tyurin.filesync.server.connector.facory.ConnectorFactory;
 import ru.tyurin.filesync.server.connector.facory.Factory;
-import ru.tyurin.filesync.server.connector.facory.SessionFactory;
 import ru.tyurin.filesync.server.connector.facory.SessionPoolFactory;
-import ru.tyurin.filesync.server.storage.BlockNode;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
@@ -20,8 +17,6 @@ import java.net.ServerSocket;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 
 public class ConnectionManager extends Thread {
 
@@ -32,15 +27,11 @@ public class ConnectionManager extends Thread {
 	final int CONNECTION_PORT = 4444;
 
 	protected ObjectPool<Session> connectionPool;
-	protected Queue<BlockNode> dataQueue;
 	protected List<Session> sessionList;
 
 	protected ServerSocket serverSocket;
 
 	protected Factory factory;
-	protected ConnectorFactory connectorFactory;
-	protected SessionFactory sessionFactory;
-	protected ServerSocketFactory socketFactory;
 
 	public static ServerSocketFactory getSSLServerSocketFactory() throws Exception {
 		KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -57,23 +48,6 @@ public class ConnectionManager extends Thread {
 		return ServerSocketFactory.getDefault();
 	}
 
-
-	public ConnectionManager(ConnectorFactory connectorFactory, SessionFactory sessionFactory, ServerSocketFactory socketFactory) throws Exception {
-		super("ServerConnectionManager");
-		LOG.debug("Creating connection manager...");
-		this.connectorFactory = connectorFactory;
-		this.sessionFactory = sessionFactory;
-		this.socketFactory = socketFactory;
-		sessionList = new ArrayList<>(POOL_INIT_OBJECTS_COUNT);
-		dataQueue = new ArrayBlockingQueue<BlockNode>(DATA_QUEUE_CAPACITY);
-		GenericObjectPool.Config cfg = new GenericObjectPool.Config();
-		cfg.maxIdle = 5;
-		connectionPool = new GenericObjectPool<>(new SessionPoolFactory(null), cfg);
-		serverSocket = socketFactory.createServerSocket(CONNECTION_PORT);
-		initPool();
-		LOG.debug("Connection Manager created");
-	}
-
 	public ConnectionManager(Factory factory) throws Exception {
 		super("ServerConnectionManager");
 		LOG.debug("Creating connection manager...");
@@ -82,11 +56,6 @@ public class ConnectionManager extends Thread {
 		serverSocket = factory.createServerSocket(CONNECTION_PORT);
 		this.factory = factory;
 		initPool();
-	}
-
-
-	public synchronized Queue<BlockNode> getDataQueue() {
-		return dataQueue;
 	}
 
 	protected void initPool() throws Exception {
@@ -104,10 +73,14 @@ public class ConnectionManager extends Thread {
 			} catch (InterruptedException e) {
 				this.interrupt();
 			} catch (Exception e) {
-				e.printStackTrace();
+				this.interrupt();
 			}
 		}
 		LOG.debug("Connection Manager stopped");
+	}
+
+	public void close() throws IOException {
+		serverSocket.close();
 	}
 
 	protected void tick() throws Exception {

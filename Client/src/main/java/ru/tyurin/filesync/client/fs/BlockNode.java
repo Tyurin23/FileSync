@@ -4,21 +4,21 @@ import ru.tyurin.filesync.shared.BlockTransferPart;
 
 import java.io.Serializable;
 
-public class FileBlock implements Serializable {
+public class BlockNode implements Serializable {
 
 	public static final int BLOCK_SIZE = BlockTransferPart.BLOCK_MAX_SIZE;
 
 	private int index;
 	private long hash;
-	private int size;
+	private long size;
 	private boolean sync = false;
 	private boolean deleted = false;
 	private FileNode node;//todo
 
-	public FileBlock() {
+	public BlockNode() {
 	}
 
-	public FileBlock(int index, long hash, int size) {
+	public BlockNode(int index, long hash, long size) {
 		this.index = index;
 		this.hash = hash;
 		this.size = size;
@@ -36,11 +36,11 @@ public class FileBlock implements Serializable {
 		return hash;
 	}
 
-	public int getSize() {
+	public long getSize() {
 		return size;
 	}
 
-	public void setSize(int size) {
+	public void setSize(long size) {
 		this.size = size;
 	}
 
@@ -65,6 +65,14 @@ public class FileBlock implements Serializable {
 		this.sync = sync;
 	}
 
+	public FileNode getNode() {
+		return node;
+	}
+
+	public void setNode(FileNode node) {
+		this.node = node;
+	}
+
 	@Override
 	public String toString() {
 		return String.format("%d %d (sync: %b, del: %b", this.getIndex(), this.getHash(), this.isSync(), this.isDeleted());
@@ -73,13 +81,17 @@ public class FileBlock implements Serializable {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) return true;
-		if (!(obj instanceof FileBlock)) return false;
-		FileBlock b = (FileBlock) obj;
+		if (!(obj instanceof BlockNode)) return false;
+		BlockNode b = (BlockNode) obj;
+		return equals(b);
+	}
+
+	public boolean equals(BlockNode block){
 		return (
-				b.getIndex() == this.getIndex() &&
-						b.getHash() == this.getHash() &&
-						b.isSync() == this.isSync() &&
-						b.isDeleted() == this.isDeleted()
+				block.getIndex() == this.getIndex() &&
+						block.getHash() == this.getHash() &&
+						block.isSync() == this.isSync() &&
+						block.isDeleted() == this.isDeleted()
 		);
 	}
 

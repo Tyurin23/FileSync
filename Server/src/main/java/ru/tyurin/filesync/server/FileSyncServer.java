@@ -7,17 +7,16 @@ import ru.tyurin.filesync.server.db.EntityProvider;
 import ru.tyurin.filesync.server.db.UserProvider;
 
 import javax.net.ServerSocketFactory;
+import java.io.IOException;
 
 
-public class FileSyncServer extends Thread {
+public class FileSyncServer {
 
 	public static final Logger LOG = Logger.getLogger(FileSyncServer.class);
 
 	private ConnectionManager connectionManager;
-	UserProvider userProvider;
 
 	public FileSyncServer(Config cfg) throws Exception {
-		super("FileSyncServer");
 
 		EntityProvider.createInstance(
 				cfg.getDbType(),
@@ -30,24 +29,11 @@ public class FileSyncServer extends Thread {
 
 		Factory factory = new Factory(cfg.getStorageDirectory(), createServerSocketFactory(cfg));
 		connectionManager = new ConnectionManager(factory);
-//		StorageManagerFactory storageManagerFactory = new StorageManagerFactory(cfg.getStorageDirectory());
-//		ControllerFactory controllerFactory = new ControllerFactory(storageManagerFactory);
-//		SessionFactory sessionFactory = new SessionFactory(controllerFactory);
-//		ConnectorFactory connectorFactory = new ConnectorFactory();
-//		ServerSocketFactory socketFactory;
-//		if (cfg.isEnableSSL()) {
-//			LOG.info("SSL enabled");
-//			System.setProperty("javax.net.ssl.keyStore", cfg.getKeyStore());
-//			System.setProperty("javax.net.ssl.keyStorePassword", cfg.getKeyStorePassword());
-//			socketFactory = ConnectionManager.getSSLServerSocketFactory();
-//		} else {
-//			socketFactory = ConnectionManager.getDefaultServerSocketFactory();
-//		}
-//		connectionManager = new ConnectionManager(connectorFactory, sessionFactory, socketFactory);
+		connectionManager.start();
+	}
 
-
-//		userProvider = new UserProvider();
-
+	public void stop() throws IOException {
+		connectionManager.close();
 	}
 
 	private ServerSocketFactory createServerSocketFactory(Config cfg) throws Exception {
@@ -61,52 +47,12 @@ public class FileSyncServer extends Thread {
 		}
 	}
 
-	@Override
-	public void run() {
-		connectionManager.start();
-		while (!interrupted()) {
-			if (connectionManager.isInterrupted()) {
-				interrupt();
-				continue;
-			}
-//			while (connectionManager.getDataQueue().size() > 0) {
-//				BlockNode node = connectionManager.getDataQueue().poll();
-//				LOG.debug("Node received: " + node.getPath());
-//				UserEntity user = userProvider.findById(Integer.valueOf(node.getUserId()));
-//				if(user != null){
-////					try {
-//////						storageManager.saveBlock(node);
-////					} catch (IOException e) {
-////						e.printStackTrace();
-////						interrupt();
-////					}
-//					FileEntity file = user.getFile(node.getPath());
-//					if(file == null){
-//						file = new FileEntity();
-//						file.setPath(node.getPath());
-//						user.addFile(file);
-//					}
-//					BlockEntity block = file.getBlock(node.getIndex());
-//					if(block == null){
-//						block = new BlockEntity();
-//						block.setIndex(node.getIndex());
-//						file.addBlock(block);
-//					}
-//					block.setHash(node.getHash());
-//					block.setSize(node.getSize());
-//					block.setDateModified(node.getDateModified());
-//					userProvider.updateUser(user);
-//				}
-//			}
-		}
-		connectionManager.interrupt();
-	}
+
 
 	public static void main(String[] args) {
 		LOG.info("Starting server...");
 		try {
 			FileSyncServer server = new FileSyncServer(new Config());
-			server.start();
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOG.error("Error! Message: " + e.getMessage());

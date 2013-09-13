@@ -8,12 +8,14 @@ public class BlockTransferPart implements Serializable {
 
 	private String path;
 	private byte[] data;
-	private int blockIndex;
+	private int index;
+	private long hash;
+	private long size;
 
-	public BlockTransferPart(String path, int blockIndex, byte[] data) {
+	public BlockTransferPart(String path, int index, byte[] data) {
 		this.path = path;
 		this.data = data;
-		this.blockIndex = blockIndex;
+		this.index = index;
 	}
 
 	public BlockTransferPart(String path) {
@@ -36,12 +38,28 @@ public class BlockTransferPart implements Serializable {
 		this.data = data;
 	}
 
-	public int getBlockIndex() {
-		return blockIndex;
+	public int getIndex() {
+		return index;
 	}
 
-	public void setBlockIndex(int blockIndex) {
-		this.blockIndex = blockIndex;
+	public void setIndex(int index) {
+		this.index = index;
+	}
+
+	public long getHash() {
+		return hash;
+	}
+
+	public void setHash(long hash) {
+		this.hash = hash;
+	}
+
+	public long getSize() {
+		return size;
+	}
+
+	public void setSize(long size) {
+		this.size = size;
 	}
 
 	@Override
@@ -59,7 +77,7 @@ public class BlockTransferPart implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("%s[%d]", path, data.length);
+		return String.format("%s[%d]", path, data == null ? 0 : data.length);
 	}
 
 }
